@@ -6,6 +6,7 @@
 -/
 
 import IVI_BN_AffineSlice
+import IVI_Energy_Minimal
 
 -- For concrete instantiation with L^2 spaces
 import Mathlib.MeasureTheory.Function.LpSpace
@@ -15,13 +16,7 @@ open MeasureTheory
 
 variable {μ : Measure ℝ} [SigmaFinite μ]
 
-/-- 
-The IVI energy functional for a given affine constraint.
-This is what we want to show equals 0 under BN conditions.
--/
-def IVI_Energy (V : Submodule ℝ (Lp ℝ 2 μ)) (L : ContinuousLinearMap ℝ (Lp ℝ 2 μ) ℝ) 
-    (x₀ : Lp ℝ 2 μ) : ℝ :=
-  sSup { r : ℝ | ∃ f ∈ affineSlice V L x₀, ‖x₀ - f‖ ≥ r }
+-- We now use the generic `IVI_EnergyZero` from IVI_Energy_Minimal on the set `affineSlice V L x₀`.
 
 /--
 **Main Equivalence Theorem**
@@ -42,19 +37,22 @@ theorem IVI_BN_RH_equivalence
     (hgV : g ∈ (V : Set (Lp ℝ 2 μ)))
     (hLg : L g ≠ 0) :
     -- The equivalence chain
-    (IVI_Energy V L x₀ = 0) ↔ (BNApprox V x₀) := by
+    (IVI_EnergyZero (affineSlice V L x₀) x₀) ↔ (BNApprox V x₀) := by
   constructor
-  · -- Easy direction: IVI Energy = 0 → BN
-    -- This would use your existing "easy direction" proof
-    sorry
+  · -- Easy direction: (energy zero on the affine slice) → BNApprox on V
+    -- Since affineSlice ⊆ V, metric approximation on the slice implies approximation in V.
+    intro hEnergyZero
+    intro ε hε
+    obtain ⟨f, hf_slice, hdist⟩ := hEnergyZero hε
+    rcases hf_slice with ⟨hfV, _hLf⟩
+    exact ⟨f, hfV, hdist⟩
   · -- Hard direction: BN → IVI Energy = 0  
     intro hBN
     -- Use the affine slice approximation theorem
     have h_approx := approx_in_affineSlice_of_BN V L hBN hgV hLg
-    -- Show that arbitrary approximation implies energy = 0
-    simp [IVI_Energy]
-    -- The supremum is 0 because we can approximate arbitrarily well
-    sorry
+    -- Conclude the metric characterization of energy-zero on the slice
+    intro ε hε
+    simpa using h_approx hε
 
 /--
 **Concrete BN Instantiation**
@@ -74,7 +72,7 @@ example (L : ContinuousLinearMap ℝ (Lp ℝ 2 (volume.restrict (Set.Icc 0 1))) 
     -- If BN condition holds...
     BNApprox BN_span const_one →
     -- Then IVI energy vanishes
-    IVI_Energy BN_span L const_one = 0 := by
+    IVI_EnergyZero (affineSlice BN_span L const_one) const_one := by
   intro hBN
   exact (IVI_BN_RH_equivalence BN_span L const_one witness_g hg hLg).mpr hBN
 
