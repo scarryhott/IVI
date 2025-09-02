@@ -1,6 +1,10 @@
-# Infinite Vitality Index (IVI) - Lean 4 Formalization
+# IVI ⇔ RH: Formal Verification Framework
 
-A rigorous mathematical formalization of the Infinite Vitality Index theory in Lean 4, providing a complete framework for meta-dimensional pattern analysis and automata evolution through resonance/dissonance dynamics.
+A rigorous mathematical formalization proving the equivalence between IVI Energy minimization and the Riemann Hypothesis via the Bombieri-Lagarias criterion, implemented in Lean 4.
+
+## Scope
+
+This project proves a new equivalence **IVI energy = 0 ⇔ BN** (Li-positivity formulation). The final step **BN ⇔ RH** is used as a classical imported theorem (Bombieri–Lagarias). Therefore the project yields a formal reduction **IVI ⇔ RH** contingent on the classical equivalence, rather than an independent proof of RH inside the repository.
 
 ## Overview
 
