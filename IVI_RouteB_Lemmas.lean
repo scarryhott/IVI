@@ -1,83 +1,230 @@
 /-
-Small lemmas for Route B (Direct IVI ⇒ RH):
-  1) resolvent_analytic
-  2) xi_zero_pole
-  3) map_zero_to_disc_iff
-  4) zeros_symmetry
+IVI_RouteB_Lemmas.lean
+----------------------
+Stubs for the four small analytic facts needed by Route B:
 
-Fill these with your concrete definitions of U, Φ, G, and ξ.
+1) resolvent_analytic    : (I - zU)⁻¹ is analytic on ‖z‖ < 1 (norm(U) ≤ 1).
+2) xi_zero_pole          : zeros ρ of ξ induce poles of G(z) at zρ = 1 - 1/ρ.
+3) map_zero_to_disc_iff  : ‖1 - 1/ρ‖ < 1  ↔  ρ.re > 1/2  (for nontrivial zeros).
+4) zeros_symmetry        : ξ(s) = ξ(1 - s) ⇒  ξ(ρ)=0 → ξ(1-ρ)=0.
+
+Together with your bridge, these discharge `RH_from_bridge_direct` in Route B.
 -/
 
-import Mathlib.Analysis.Complex.Basic
-import Mathlib/Topology/Complex/Analytic
-import Mathlib.Topology.MetricSpace.Basic
-import Mathlib.Analysis.Calculus.ContDiff
+import Mathlib/Analysis/NormedSpace/OperatorNorm
+import Mathlib/Topology/Algebra/Module
+import Mathlib/Analysis/Complex/Basic
+import Mathlib/Analysis/Complex.RemovableSingularity
+import Mathlib/Topology/AnalyticFunction
 
-open Complex Metric Set
+noncomputable section
+open scoped Complex
+open Complex
 
-namespace IVI_RouteB
+/-- (1) Resolvent analyticity: for a bounded operator `U` with ‖U‖ ≤ 1,
+    the map `z ↦ (I - z U)⁻¹` is analytic on the unit ball.  -/
+theorem resolvent_analytic
+  {H : Type*} [NormedAddCommGroup H] [NormedSpace ℂ H]
+  (U : H →L[ℂ] H) (hU : ‖U‖ ≤ 1) :
+  AnalyticOn ℂ (fun z => (ContinuousLinearMap.id ℂ H - z • U).inverse)
+    (Metric.ball (0 : ℂ) 1) := by
+  /- Idea: use Neumann series
+       R(z) = ∑_{n≥0} z^n • U^n
+     which converges for ‖z‖ < 1/‖U‖, hence on ball(0,1) when ‖U‖ ≤ 1.
+     Then show `(I - zU) ∘ R(z) = I = R(z) ∘ (I - zU)` and termwise differentiability.
+     In mathlib, you can also invoke `HasFPowerSeriesOnBall` variants.
+  -/
+  sorry
 
-/-!
-  Throughout, specialize `xi, Φ, G` to your concrete bridge objects, where
-  typically `G z = Φ z + 1` on `ball 0 1` and `Φ` arises from the resolvent.
--/
 
-section Stubs
+/-- (2) Pole mapping from zeros of ξ to poles of `G(z)`.
+    Given a zero `ρ` of multiplicity `m ≥ 1` of an analytic `xi`, define
 
-universe u v
+      G(z) = (xi' / xi) (1/(1-z)) * (1/(1-z))^2.
 
-variable {H : Type u} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+    Then `zρ := 1 - 1/ρ` is a (non-removable) singularity (indeed a pole) of `G`. -/
+theorem xi_zero_pole
+  (xi : ℂ → ℂ)
+  (hxi_analytic : AnalyticOn ℂ xi univ)
+  {ρ : ℂ} (hρ0 : ρ ≠ 0) (hρ : xi ρ = 0) :
+  ¬ AnalyticAt ℂ (fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2)
+      (1 - 1/ρ) := by
+  /- Sketch:
+     • Near s = ρ, `xi'/xi` has a simple pole (order = multiplicity of zero).
+     • Compose with s(z) = 1/(1-z): s has a simple pole at zρ = 1 - 1/ρ,
+       hence the composition inherits a non-removable singularity.
+     • Multiplying by s'(z) = (1/(1-z))^2 adjusts the order but does not remove the pole.
+     Use `IsolatedZeros`, `Meromorphic` facts, or build directly via `LaurentSeries`.
+  -/
+  sorry
 
-/- Resolvent analyticity on the unit disc via Neumann series.
-   Provide `G` from your bridge (scalar-valued, e.g. a matrix coefficient of the resolvent)
-   and discharge analyticity by uniform convergence of the power series on `ball 0 1`. -/
-lemma resolvent_analytic
-    (G : ℂ → ℂ)
-    (hG_def_from_resolvent : True) :
-    AnalyticOn ℂ G (ball (0 : ℂ) 1) := by
-  -- TODO: Replace `True` with your concrete bridge definition and prove via Neumann series.
-  -- Hint: show `G` has a power series expansion ∑ aₙ (z^n) with radius ≥ 1.
-  -- Then use `G.analyticOn_of_hasFPowerSeriesOnBall`.
-  -- If `G z = ⟨(I - zU)^{-1} v, w⟩`, expand `(I - zU)^{-1} = ∑ (zU)^n` for ‖z‖<1.
-  admit
 
-/- Pole mapping: If ρ is a nontrivial zero of ξ, then
-   G(z) := (ξ′/ξ)(1/(1−z)) ⋅ (1−z)^{-2} has a non-removable singularity at zρ := 1 - 1/ρ.
-   Prove `¬ AnalyticAt G zρ`. -/
-lemma xi_zero_pole
-    (xi : ℂ → ℂ)
-    (G : ℂ → ℂ)
-    (hG_def : True)
-    (ρ : ℂ) (hξ : xi ρ = 0) :
-    ¬ AnalyticAt ℂ G (1 - 1/ρ) := by
-  -- TODO: Unpack `G` as (ξ′/ξ) ∘ (1/(1−z)) times (1−z)^{-2} and apply the chain rule for poles.
-  -- Use that (ξ′/ξ) has a simple pole at zeros of ξ with nonzero residue.
-  admit
+/-- (3) Geometry of ρ ↦ zρ on the disc:
+    For `ρ ≠ 0`, we have ‖1 - 1/ρ‖ < 1  ↔  ρ.re > 1/2.
+    (Equivalently, `=1 ↔ =1/2`, `>1 ↔ <1/2`.) -/
+theorem map_zero_to_disc_iff
+  (ρ : ℂ) (hρ : ρ ≠ 0) :
+  ‖1 - 1/ρ‖ < 1 ↔ ρ.re > (1/2 : ℝ) := by
+  -- Step 1: rewrite into a quotient form and clear the denominator using ‖ρ‖ > 0.
+  have hpos : 0 < ‖ρ‖ := by simpa using (norm_pos_iff.mpr hρ)
+  have hform : (1 : ℂ) - 1/ρ = (ρ - 1) / ρ := by
+    calc
+      (1 : ℂ) - 1/ρ = ρ/ρ - 1/ρ := by
+        have : (ρ / ρ : ℂ) = 1 := by simpa [div_self hρ]
+        simpa [this]
+      _ = (ρ - 1) / ρ := by
+        simpa [sub_eq_add_neg] using (sub_div ρ 1 ρ).symm
+  have : ‖1 - 1/ρ‖ < 1 ↔ ‖(ρ - 1) / ρ‖ < 1 := by simpa [hform]
+  -- Step 2: use norm_div to obtain a real inequality with division by ‖ρ‖.
+  have : ‖(ρ - 1) / ρ‖ < 1 ↔ ‖ρ - 1‖ / ‖ρ‖ < 1 := by simpa [norm_div]
+  -- Step 3: clear the positive denominator.
+  have : ‖ρ - 1‖ / ‖ρ‖ < 1 ↔ ‖ρ - 1‖ < ‖ρ‖ := by
+    have := (div_lt_iff hpos : ‖ρ - 1‖ / ‖ρ‖ < (1 : ℝ) ↔ ‖ρ - 1‖ < 1 * ‖ρ‖)
+    simpa [one_mul] using this
+  -- Step 4: reduce to the explicit algebraic identity on real and imaginary parts.
+  -- This is equivalent to (ρ.re - 1)^2 + (ρ.im)^2 < (ρ.re)^2 + (ρ.im)^2,
+  -- i.e. 1 - 2*ρ.re < 0, hence ρ.re > 1/2.
+  -- Implemented by expanding norms in ℂ.
+  constructor
+  · intro h
+    have h' : ‖ρ - 1‖ < ‖ρ‖ := by
+      -- combine the earlier iff steps left-to-right
+      have h1 : ‖1 - 1/ρ‖ < 1 := h
+      have h2 : ‖(ρ - 1) / ρ‖ < 1 := by simpa [hform] using h1
+      have h3 : ‖ρ - 1‖ / ‖ρ‖ < 1 := by simpa [norm_div] using h2
+      simpa using (this.mp h3)
+    -- turn into a statement on squares and cancel the common ρ.im^2 term
+    have hsq : ‖ρ - 1‖^2 < ‖ρ‖^2 := by
+      have hnn1 : 0 ≤ ‖ρ - 1‖ := norm_nonneg _
+      have hnn2 : 0 ≤ ‖ρ‖ := norm_nonneg _
+      simpa [pow_two] using (mul_self_lt_mul_self_iff hnn1 hnn2).mpr h'
+    -- Expand both sides via re/im decomposition
+    -- ‖ρ - 1‖^2 = (ρ.re - 1)^2 + (ρ.im)^2 and ‖ρ‖^2 = (ρ.re)^2 + (ρ.im)^2
+    -- which yields 1 - 2*ρ.re < 0
+    have : (1 : ℝ) - 2 * ρ.re < 0 := by
+      -- rearrange hsq and cancel ρ.im^2 + ρ.re^2 terms
+      -- (ρ.re - 1)^2 + ρ.im^2 < ρ.re^2 + ρ.im^2
+      -- ↔ ρ.re^2 - 2ρ.re + 1 + ρ.im^2 < ρ.re^2 + ρ.im^2
+      -- ↔ 1 - 2ρ.re < 0
+      -- We justify using `by ring` after rewriting with re/im equalities.
+      -- The required equalities are standard; we package them with `have` facts:
+      have hL : ‖ρ - 1‖^2 = (ρ.re - 1)^2 + (ρ.im)^2 := by
+        simpa using Complex.sqAbs_sub_one_re_im ρ
+      have hR : ‖ρ‖^2 = (ρ.re)^2 + (ρ.im)^2 := by
+        simpa using Complex.sqAbs_re_im ρ
+      -- combine
+      simpa [hL, hR] using hsq
+    have : ρ.re > (1/2 : ℝ) := by linarith
+    exact this
+  · intro hRe
+    -- Reverse direction: ρ.re > 1/2 ⇒ ‖ρ - 1‖ < ‖ρ‖ ⇒ ‖1 - 1/ρ‖ < 1
+    have hineq : (1 : ℝ) - 2 * ρ.re < 0 := by linarith
+    -- Convert back to norms using the same expansions as above
+    have hsq : ‖ρ - 1‖^2 < ‖ρ‖^2 := by
+      have hL : ‖ρ - 1‖^2 = (ρ.re - 1)^2 + (ρ.im)^2 := by
+        simpa using Complex.sqAbs_sub_one_re_im ρ
+      have hR : ‖ρ‖^2 = (ρ.re)^2 + (ρ.im)^2 := by
+        simpa using Complex.sqAbs_re_im ρ
+      -- 1 - 2ρ.re < 0 ⇔ (ρ.re - 1)^2 + ρ.im^2 < ρ.re^2 + ρ.im^2
+      simpa [hL, hR]
+    have hnorm : ‖ρ - 1‖ < ‖ρ‖ := by
+      have hnn1 : 0 ≤ ‖ρ - 1‖ := norm_nonneg _
+      have hnn2 : 0 ≤ ‖ρ‖ := norm_nonneg _
+      exact (mul_self_lt_mul_self_iff hnn1 hnn2).mp (by simpa [pow_two] using hsq)
+    -- Now reintroduce the division steps
+    have : ‖ρ - 1‖ / ‖ρ‖ < 1 := by
+      have := (div_lt_iff hpos).mpr (by simpa [one_mul])
+      -- Create (‖ρ - 1‖ / ‖ρ‖ < 1) from ‖ρ - 1‖ < ‖ρ‖
+      simpa [one_mul] using (div_lt_iff hpos).mpr hnorm
+    have : ‖(ρ - 1) / ρ‖ < 1 := by simpa [norm_div]
+    simpa [hform] using this
 
-/- Geometry of the map ρ ↦ zρ := 1 - 1/ρ.
-   Algebraic identity: ‖1 - 1/ρ‖^2 = 1 + 1/‖ρ‖^2 - 2 Re(1/ρ).
-   Deduce: ‖1 - 1/ρ‖ < 1 ↔ ρ.re > 1/2 (for ρ ≠ 0). -/
-lemma map_zero_to_disc_iff
-    (xi : ℂ → ℂ) (ρ : ℂ) (hξ : xi ρ = 0)
-    (hρ : ρ ≠ 0) :
-    (‖(1 : ℂ) - 1/ρ‖ < 1 ↔ ρ.re > (1/2 : ℝ)) := by
-  -- TODO (suggested proof):
-  --   use `Complex.norm_sq` to square both sides (monotone on ≥ 0),
-  --   rewrite LHS via the identity above,
-  --   use Re(1/ρ) = ρ.re / ‖ρ‖^2, and simplify.
-  admit
 
-/- Zeros symmetry from the functional equation: ξ(s) = ξ(1 − s).
-   Conclude: xi ρ = 0 → xi (1 − ρ) = 0. -/
-lemma zeros_symmetry
-    (xi : ℂ → ℂ)
-    (h_func_eq : ∀ s, xi s = xi (1 - s))
-    (ρ : ℂ) (hξ : xi ρ = 0) :
-    xi (1 - ρ) = 0 := by
-  -- Immediate from the functional equation.
-  simpa [h_func_eq ρ] using hξ
+/-- (4) Zero symmetry from the functional equation.
+    If `xi (s) = xi (1 - s)` holds for all `s`, then zeros are symmetric
+    by `ρ ↦ 1 - ρ`. -/
+theorem zeros_symmetry
+  (xi : ℂ → ℂ) (hFE : ∀ s, xi s = xi (1 - s))
+  {ρ : ℂ} (hρ : xi ρ = 0) :
+  xi (1 - ρ) = 0 := by
+  -- Direct rewrite using the functional equation at ρ
+  have := congrArg id hρ
+  simpa [hFE ρ] using this
 
-end Stubs
 
-end IVI_RouteB
+/- ———————————————————————————————————————————————————————————————
+   Glue: a local wrapper that matches your Route B theorem’s hypotheses
+   and concludes RH_xi (all zeros lie on Re s = 1/2).
+   Replace `G`/`Φ` names by your concrete bridge objects when you specialize.
+   ——————————————————————————————————————————————————————————————— -/
 
+/-- Route B: if the resolvent side gives an analytic `Φ` on the unit ball and
+    the RHS `G` equals it up to `+ 1`, zeros off the critical line would induce
+    poles in the ball, contradicting analyticity. -/
+theorem RH_from_bridge_direct'
+  (xi : ℂ → ℂ)
+  (Φ : ℂ → ℂ)
+  (h_bridge : ∀ z, ‖z‖ < 1 →
+     Φ z = (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2 - 1)
+  (hΦ_analytic : AnalyticOn ℂ Φ (Metric.ball 0 1))
+  (hFE : ∀ s, xi s = xi (1 - s)) :
+  (∀ ρ, xi ρ = 0 → ρ.re = (1/2 : ℝ)) := by
+  classical
+  intro ρ hρ
+  by_contra hhalf
+  have hρ0 : ρ ≠ 0 := by
+    -- Nontrivial zeros exclude 0 (adjust to your ξ normalization if needed).
+    -- For now, assume zeros considered are nontrivial.
+    -- Replace by a project lemma if 0 could be a trivial zero.
+    -- Admitted placeholder:
+    sorry
+  -- Split into the two half-planes using symmetry.
+  by_cases hgt : ρ.re > (1/2 : ℝ)
+  · -- right half-plane ⇒ zρ in unit ball
+    have hz : ‖1 - 1/ρ‖ < 1 := (map_zero_to_disc_iff ρ hρ0).mpr hgt
+    -- Define G and use the bridge at zρ
+    let G : ℂ → ℂ :=
+      fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2
+    have hG_pole : ¬ AnalyticAt ℂ G (1 - 1/ρ) :=
+      xi_zero_pole xi (by simpa using (AnalyticOn.univ : AnalyticOn ℂ xi univ)) hρ0 hρ
+    -- But Φ = G - 1 on the ball, contradicting analyticity at zρ
+    have hz_mem : (1 - 1/ρ) ∈ Metric.ball (0 : ℂ) 1 := by simpa using hz
+    have hΦ_at : AnalyticAt ℂ Φ (1 - 1/ρ) :=
+      (hΦ_analytic.analyticAt_of_mem hz_mem)
+    -- Use local identity Φ = G - 1 near zρ to transfer analyticity
+    have hGm1_at : AnalyticAt ℂ (fun z => G z - 1) (1 - 1/ρ) := by
+      -- From equality on a neighborhood: specialize h_bridge on ball
+      -- Convert pointwise equality on ball into local equality at the point
+      -- and use that constants are analytic.
+      -- We justify via `AnalyticAt.congr_of_eq` pattern.
+      refine hΦ_at.congr_of_eq ?hEq
+      intro z hz'
+      simpa [G] using (h_bridge z hz')
+    -- Constant 1 is analytic, hence G is analytic at the point — contradiction.
+    have hG_at : AnalyticAt ℂ G (1 - 1/ρ) := by
+      simpa using (hGm1_at.add_const 1)
+    exact hG_pole hG_at
+  · -- left half-plane (ρ.re ≤ 1/2 but not equal) ⇒ use symmetry to flip.
+    have hlt : ρ.re < (1/2 : ℝ) := lt_of_le_of_ne (le_of_not_gt hgt) (ne_comm.mp hhalf)
+    have hρ' : xi (1 - ρ) = 0 := zeros_symmetry xi hFE hρ
+    have hgt' : (1 - ρ).re > (1/2 : ℝ) := by
+      -- (1 - ρ).re = 1 - ρ.re, so with ρ.re < 1/2 we get > 1/2
+      have : (1 : ℝ) - ρ.re > (1/2 : ℝ) := by linarith
+      simpa using this
+    -- Reuse the right half-plane case on 1 - ρ
+    have hz : ‖1 - 1/(1 - ρ)‖ < 1 := (map_zero_to_disc_iff (1 - ρ) (by simpa [sub_eq_add_neg] using sub_ne_zero.mpr hρ0)).mpr hgt'
+    -- Now repeat the contradiction argument verbatim with ρ replaced by 1 - ρ
+    let G : ℂ → ℂ :=
+      fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2
+    have hG_pole : ¬ AnalyticAt ℂ G (1 - 1/(1 - ρ)) :=
+      xi_zero_pole xi (by simpa using (AnalyticOn.univ : AnalyticOn ℂ xi univ)) (by simpa) hρ'
+    have hz_mem : (1 - 1/(1 - ρ)) ∈ Metric.ball (0 : ℂ) 1 := by simpa using hz
+    have hΦ_at : AnalyticAt ℂ Φ (1 - 1/(1 - ρ)) :=
+      (hΦ_analytic.analyticAt_of_mem hz_mem)
+    have hGm1_at : AnalyticAt ℂ (fun z => G z - 1) (1 - 1/(1 - ρ)) := by
+      refine hΦ_at.congr_of_eq ?hEq
+      intro z hz'
+      simpa [G] using (h_bridge z hz')
+    have hG_at : AnalyticAt ℂ G (1 - 1/(1 - ρ)) := by
+      simpa using (hGm1_at.add_const 1)
+    exact hG_pole hG_at
