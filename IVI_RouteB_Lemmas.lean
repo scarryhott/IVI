@@ -250,17 +250,13 @@ theorem RH_from_bridge_direct'
   (h_bridge : ∀ z, ‖z‖ < 1 →
      Φ z = (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2 - 1)
   (hΦ_analytic : AnalyticOn ℂ Φ (Metric.ball 0 1))
-  (hFE : ∀ s, xi s = xi (1 - s)) :
+  (hFE : ∀ s, xi s = xi (1 - s))
+  (hNontriv : ∀ ρ, xi ρ = 0 → ρ ≠ 0) :
   (∀ ρ, xi ρ = 0 → ρ.re = (1/2 : ℝ)) := by
   classical
   intro ρ hρ
   by_contra hhalf
-  have hρ0 : ρ ≠ 0 := by
-    -- Nontrivial zeros exclude 0 (adjust to your ξ normalization if needed).
-    -- For now, assume zeros considered are nontrivial.
-    -- Replace by a project lemma if 0 could be a trivial zero.
-    -- Admitted placeholder:
-    sorry
+  have hρ0 : ρ ≠ 0 := hNontriv ρ hρ
   -- Split into the two half-planes using symmetry.
   by_cases hgt : ρ.re > (1/2 : ℝ)
   · -- right half-plane ⇒ zρ in unit ball
