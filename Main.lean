@@ -51,6 +51,7 @@ variable {I : Type*} [Fintype I]
 #check IVI_RouteB_Internal_Specialize.internal_RH_via_bridge
 -- Adapters and canonical E(z) using xi_log_deriv
 #check IVI_RouteB_Internal_Adapters.E_canonical
+-- Geometry equivalence for the map ρ ↦ 1 - 1/ρ
 
 -- Adelic geometry beyond groups
 -- #check IVI_paradox_resolution
