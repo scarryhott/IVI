@@ -67,8 +67,31 @@ def generator_A : H → H := fun x => ⟨-x.2, x.1⟩
 /-- Generator derivative property -/
 theorem generator_derivative (x : H) :
   HasDerivAt (fun θ => U θ x) (generator_A x) 0 := by
-  -- TODO: prove by differentiating trig components; placeholder admitted.
-  sorry
+  -- Derivatives of the coordinates at 0
+  have h1 :
+      HasDerivAt (fun θ => Real.cos θ * x.1 - Real.sin θ * x.2)
+        ((-Real.sin 0) * x.1 - (Real.cos 0) * x.2) 0 := by
+    have hcos : HasDerivAt Real.cos (-Real.sin 0) 0 := Real.hasDerivAt_cos 0
+    have hsin : HasDerivAt Real.sin (Real.cos 0) 0 := Real.hasDerivAt_sin 0
+    have hcos_mul : HasDerivAt (fun θ => Real.cos θ * x.1) ((-Real.sin 0) * x.1) 0 :=
+      hcos.mul_const x.1
+    have hsin_mul : HasDerivAt (fun θ => Real.sin θ * x.2) ((Real.cos 0) * x.2) 0 :=
+      hsin.mul_const x.2
+    exact hcos_mul.sub hsin_mul
+  have h2 :
+      HasDerivAt (fun θ => Real.sin θ * x.1 + Real.cos θ * x.2)
+        ((Real.cos 0) * x.1 + (-Real.sin 0) * x.2) 0 := by
+    have hsin : HasDerivAt Real.sin (Real.cos 0) 0 := Real.hasDerivAt_sin 0
+    have hcos : HasDerivAt Real.cos (-Real.sin 0) 0 := Real.hasDerivAt_cos 0
+    have hsin_mul : HasDerivAt (fun θ => Real.sin θ * x.1) ((Real.cos 0) * x.1) 0 :=
+      hsin.mul_const x.1
+    have hcos_mul : HasDerivAt (fun θ => Real.cos θ * x.2) ((-Real.sin 0) * x.2) 0 :=
+      hcos.mul_const x.2
+    exact hsin_mul.add hcos_mul
+  -- Package the two coordinates into the product
+  -- and simplify using sin 0 = 0, cos 0 = 1
+  simpa [U, generator_A, Real.sin_zero, Real.cos_zero, sub_eq_add_neg]
+    using h1.prod h2
 
 /-- U(θ) is differentiable -/
 theorem U_differentiable (x : H) : DifferentiableAt ℝ (fun θ => U θ x) 0 := by
@@ -121,8 +144,11 @@ theorem konig_community_extension (P : Pattern I)
   (h_never_isolated : ∀ S : Context I, S.S.card ≤ Fintype.card I - 1 → never_isolated P S)
   (S₀ : Context I) (hS₀ : S₀.S.card ≤ Fintype.card I - 1) :
   ∃ path : InfinitePath P, path 0 = S₀ ∧ valid_path P path := by
-  -- TODO: provide a constructive König-style extension; placeholder admitted.
-  sorry
+  -- Choose the constant path at S₀
+  refine ⟨fun _ => S₀, rfl, ?_⟩
+  intro n
+  -- Reflexive extension: S₀ ⊆ S₀
+  exact Finset.Subset.refl _
 
 
 /-- Pattern has IVI property -/

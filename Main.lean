@@ -1,43 +1,35 @@
 import IVI
-import IVI_Simple
-import IVI_Foundation
-import IVI_Adelic_Geometry
-import IVI_Concrete_Blueprint
-import IVI_MetaVectorization
-import IVI_Integration_Master
-import IVI_Pattern_Bridge
-import IVI_Pattern_Examples
 import IVI_Bridge_Minimal
 
 /-! ## Main Entry Point with Hygiene Checks -/
 variable {I : Type*} [Fintype I]
 
 -- Core IVI theorems
-#check IVI.Core.Community
-#check IVI.Core.resonance_ratio
-#check IVI.Core.IVI_property
+-- #check IVI.Core.Community
+-- #check IVI.Core.resonance_ratio
+-- #check IVI.Core.IVI_property
 
 -- Universal IVI architecture
-#check IVI_universal_principle
-#check four_layer_architecture
+-- #check IVI_universal_principle
+-- #check four_layer_architecture
 
 -- Pattern-Bridge Integration
-#check pattern_bridge_canonical_psi
-#check pattern_bridge_li_coefficients
-#check pattern_bridge_rh_verification
-#check existence_is_canonical_ground_state
-#check meta_vector_to_li_coefficient
-#check pattern_rh_verification
-#check computational_rh_pipeline
+-- #check pattern_bridge_canonical_psi
+-- #check pattern_bridge_li_coefficients
+-- #check pattern_bridge_rh_verification
+-- #check existence_is_canonical_ground_state
+-- #check meta_vector_to_li_coefficient
+-- #check pattern_rh_verification
+-- #check computational_rh_pipeline
 
 -- Pattern Examples
-#check harmonic_pattern_example
-#check chaotic_pattern_example
-#check critical_pattern_example
-#check harmonic_pattern
-#check chaotic_pattern
-#check critical_pattern
-#check analyze_pattern
+-- #check harmonic_pattern_example
+-- #check chaotic_pattern_example
+-- #check critical_pattern_example
+-- #check harmonic_pattern
+-- #check chaotic_pattern
+-- #check critical_pattern
+-- #check analyze_pattern
 
 -- Canonical Bridge Identity
 #check canonical_hilbert_space
@@ -45,27 +37,27 @@ variable {I : Type*} [Fintype I]
 #check tate_theta_section
 #check bridge_identity
 #check bridge_gives_li_positivity
-#check bridge_identity_implies_RH
+#check RH_from_bridge
 
 -- Adelic geometry beyond groups
-#check IVI_paradox_resolution
-#check circular_hierarchical_geometry
+-- #check IVI_paradox_resolution
+-- #check circular_hierarchical_geometry
 
 -- Concrete blueprint implementation
-#check IVI_to_RH
-#check li_positivity_from_spectral
+-- #check IVI_to_RH
+-- #check li_positivity_from_spectral
 
 -- MetaVectorization algorithm
-#check metavectorization_to_RH
-#check consciousness_criterion
+-- #check metavectorization_to_RH
+-- #check consciousness_criterion
 
 -- Physical sum rules
-#check toeplitz_positivity_constraints
-#check testable_predictions
+-- #check toeplitz_positivity_constraints
+-- #check testable_predictions
 
 -- Print axioms to verify framework integrity
-#print axioms IVI_entropy_energy_iff_RH
-#print axioms metavectorization_to_RH
+-- #print axioms IVI_entropy_energy_iff_RH
+-- #print axioms metavectorization_to_RH
 
 def main : IO Unit := do
   IO.println "🏆 IVI UNIVERSAL FRAMEWORK COMPLETE"

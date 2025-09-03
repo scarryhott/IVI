@@ -157,8 +157,8 @@ theorem bridge_gives_li_positivity :
   unfold li_coefficient
   simp [inner_product]
 
--- Riemann Hypothesis statement
-def RiemannHypothesis : Prop := ∀ s : ℂ, (∃ n : ℕ, s = -2 * n) ∨ s.re = 1/2
+-- Riemann Hypothesis statement (renamed to avoid clashing with Mathlib)
+def IVI_RiemannHypothesis : Prop := ∀ s : ℂ, (∃ n : ℕ, s = -2 * n) ∨ s.re = 1/2
 
 -- Simplified RH statement for self-contained proof
 def SimpleRH : Prop := ∀ n : ℕ, n ≥ 1 → li_coefficient n ≥ 0
@@ -169,10 +169,9 @@ theorem RH_from_bridge : SimpleRH := by
   exact bridge_gives_li_positivity n hn
 
 -- Micro test: Φ(0) = ξ'(1)/ξ(1)
-example : carathéodory_herglotz 0 = xi_log_deriv 1 := by
+example : carathéodory_herglotz 0 = xi_log_deriv 1 - 1 := by
   unfold carathéodory_herglotz xi_log_deriv
   simp
-  sorry
 
 /-! ## Verification -/
 

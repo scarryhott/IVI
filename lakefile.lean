@@ -15,17 +15,34 @@ lean_lib «Classical» {
   -- Classical Bombieri-Lagarias equivalence
 }
 
-@[default_target]
 lean_lib "IVI_Bridge_Minimal" where
   -- Minimal compilable implementation of canonical bridge identity
 
 lean_lib "IVI_Core_Clean" where
   -- Core clean IVI implementation
 
+-- Expose top-level modules so `Main` can import them
+lean_lib "IVI_Simple" where
+
+lean_lib "IVI_Foundation" where
+
+lean_lib "IVI_Adelic_Geometry" where
+
+lean_lib "IVI_Concrete_Blueprint" where
+
+lean_lib "IVI_MetaVectorization" where
+
+lean_lib "IVI_Integration_Master" where
+
+lean_lib "IVI_Pattern_Bridge" where
+
+lean_lib "IVI_Pattern_Examples" where
+
 /-! Route B lemmas library as a separate build target. -/
 lean_lib "IVI_RouteB_Lemmas" where
   -- Focus build on `IVI_RouteB_Lemmas.lean` and its deps
 
+@[default_target]
 lean_exe "ivi" where
   root := `Main
   supportInterpreter := true
