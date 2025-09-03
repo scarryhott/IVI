@@ -67,12 +67,8 @@ def generator_A : H → H := fun x => ⟨-x.2, x.1⟩
 /-- Generator derivative property -/
 theorem generator_derivative (x : H) :
   HasDerivAt (fun θ => U θ x) (generator_A x) 0 := by
-  -- Use basic trigonometric derivatives
-  unfold U generator_A
-  simp [HasDerivAt]
-  -- Apply chain rule for cos/sin derivatives
-  apply hasDerivAt_const.add
-  exact hasDerivAt_id'.neg.cos.mul hasDerivAt_const
+  -- TODO: prove by differentiating trig components; placeholder admitted.
+  sorry
 
 /-- U(θ) is differentiable -/
 theorem U_differentiable (x : H) : DifferentiableAt ℝ (fun θ => U θ x) 0 := by
@@ -125,16 +121,8 @@ theorem konig_community_extension (P : Pattern I)
   (h_never_isolated : ∀ S : Context I, S.S.card ≤ Fintype.card I - 1 → never_isolated P S)
   (S₀ : Context I) (hS₀ : S₀.S.card ≤ Fintype.card I - 1) :
   ∃ path : InfinitePath P, path 0 = S₀ ∧ valid_path P path := by
-  -- Apply König's infinity lemma for finitely branching trees
-  -- Each context has finitely many successors, never isolated ensures infinite paths
-  have h_finite_branch : ∀ S : Context I, Finite {T | extends P S T} := by
-    intro S; exact Fintype.to_subtype _
-  have h_infinite : ∀ S : Context I, S.S.card ≤ Fintype.card I - 1 → 
-    ∃ T, extends P S T := by
-    intro S hS; exact h_never_isolated S hS
-  -- König's lemma gives infinite path
-  exact ⟨fun n => Classical.choose (Nat.rec S₀ (fun _ S => Classical.choose (h_infinite S sorry)) n), 
-         rfl, sorry⟩
+  -- TODO: provide a constructive König-style extension; placeholder admitted.
+  sorry
 
 
 /-- Pattern has IVI property -/
@@ -181,20 +169,8 @@ theorem monotone_improvement (P : Pattern I)
   (h_nudge : A'.Res ≥ A.Res ∧ A'.Dis ≤ A.Dis ∧ A'.Div ≥ A.Div ∧ A'.HolV ≥ A.HolV)
   (h_improvement : A'.Div > A.Div ∨ A'.HolV > A.HolV) :
   IVIscore a b h lam A < IVIscore a b h lam A' := by
-  unfold IVIscore
-  -- Use product monotonicity: if factors improve and product structure preserved
-  have h_pos : 0 < A.Res * A.Div * A.HolV := by
-    apply mul_pos; apply mul_pos
-    · exact A.res_pos
-    · exact A.div_pos  
-    · exact A.holv_pos
-  -- Resonance factor: A'.Res / A'.Dis ≥ A.Res / A.Dis
-  have h_res_improve : A'.Res / A'.Dis ≥ A.Res / A.Dis := by
-    exact div_le_div_of_nonneg_left (le_of_lt A.res_pos) A.dis_pos h_nudge.2.1 h_nudge.1
-  -- Apply product inequality with strict improvement
-  cases h_improvement with
-  | inl h_div => exact mul_lt_mul_of_pos_left h_div h_pos
-  | inr h_holv => exact mul_lt_mul_of_pos_right h_holv (mul_pos A.res_pos A.div_pos)
+  -- TODO: formalize monotonicity argument; placeholder admitted.
+  sorry
 
 /-! ## Holonomy rigor -/
 
@@ -208,15 +184,12 @@ def loop_holonomy (P : Pattern I) (L : Loop I) : ℝ :=
 
 theorem holonomy_cyclic_invariant (P : Pattern I) (L : Loop I) :
   ∀ k : ℕ, loop_holonomy P L = loop_holonomy P ⟨L.vertices.rotate k, by
-    rw [List.head?_rotate, List.getLast?_rotate]; exact L.is_cycle, by
-    simp [List.length_rotate]
-    exact L.min_length⟩ := by
-  intro k
-  -- Cyclic sum invariance follows from rotation properties
-  unfold loop_holonomy
-  simp [List.foldl_rotate, List.zip_rotate]
-  -- Rotation preserves the cyclic sum structure
-  rfl
+    -- TODO: prove rotation preserves cycle endpoints
+    sorry, by
+    -- TODO: length of rotate equals original length
+    sorry⟩ := by
+  -- TODO: cyclic invariance proof via rotation of zipped edges; placeholder admitted.
+  sorry
 
 theorem holonomy_isometric_stability (P : Pattern I) 
   (f : H → H) (hf : Isometry f) :
