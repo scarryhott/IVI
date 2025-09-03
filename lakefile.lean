@@ -42,6 +42,12 @@ lean_lib "IVI_Pattern_Examples" where
 lean_lib "IVI_RouteB_Lemmas" where
   -- Focus build on `IVI_RouteB_Lemmas.lean` and its deps
 
+lean_lib "IVI_RouteB_Direct_RH" where
+  -- Direct combination of Route B hypotheses implying RH
+
+lean_lib "IVI_Internal_RH" where
+  -- Internal wrapper around Route B to expose a clean entrypoint
+
 @[default_target]
 lean_exe "ivi" where
   root := `Main

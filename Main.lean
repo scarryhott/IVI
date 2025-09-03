@@ -1,5 +1,6 @@
 import IVI
 import IVI_Bridge_Minimal
+import IVI_Internal_RH
 
 /-! ## Main Entry Point with Hygiene Checks -/
 variable {I : Type*} [Fintype I]
@@ -38,6 +39,9 @@ variable {I : Type*} [Fintype I]
 #check bridge_identity
 #check bridge_gives_li_positivity
 #check RH_from_bridge
+
+-- Route B: Internal RH proof wrapper
+#check IVI_Internal.internal_RH_proof
 
 -- Adelic geometry beyond groups
 -- #check IVI_paradox_resolution
