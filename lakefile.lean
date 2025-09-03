@@ -54,6 +54,9 @@ lean_lib "IVI_RouteB_Internal_Instantiate" where
 lean_lib "IVI_RouteB_Internal_Specialize" where
   -- Specialization that ties lemmas to the internal wrapper for canonical xi/G
 
+lean_lib "IVI_RouteB_Internal_Adapters" where
+  -- Small helpers to derive required hypotheses for the internal specialization
+
 @[default_target]
 lean_exe "ivi" where
   root := `Main
