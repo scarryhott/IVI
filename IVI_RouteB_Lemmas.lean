@@ -125,6 +125,38 @@ theorem resolvent_analytic_scaffold
   rfl
 
 
+/-- Pullback principle for the specific Möbius map `s(z) = 1/(1-z)`.
+    If the logarithmic derivative `(xi'/xi)` is non-analytic at `ρ ≠ 0`, then
+    the composed quantity
+
+      G(z) = (xi' (1/(1-z)) / xi (1/(1-z))) * (1/(1-z))^2
+
+    is non-analytic at `zρ := 1 - 1/ρ` (indeed has a pole). This is the exact
+    shape used in Route B. -/
+namespace PoleMapping
+
+variable {ρ : ℂ}
+
+theorem compose_log_deriv_mobius
+  (xi : ℂ → ℂ) (hA : AnalyticOn ℂ xi univ)
+  (h_nonanalytic : ¬ AnalyticAt ℂ (fun s => (deriv xi s) / xi s) ρ)
+  (hρ0 : ρ ≠ 0) :
+  ¬ AnalyticAt ℂ (fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2)
+      (1 - 1/ρ) := by
+  /- Proof idea (to be filled):
+     • The Möbius map s(z) = 1/(1 - z) has a simple pole at zρ = 1 - 1/ρ,
+       mapping zρ to s = ρ. Thus zρ is the unique preimage of ρ along s in a
+       punctured neighborhood.
+     • If (xi'/xi) has a non-removable singularity at ρ, then by composition
+       through a map with simple pole at zρ, the function (xi'/xi)∘s has a
+       non-removable singularity at zρ.
+     • Multiplying by s'(z) = (1/(1 - z))^2 (which also has a simple pole at zρ)
+       does not remove the singularity. Conclude non-analyticity at zρ.
+  -/
+  sorry
+
+end PoleMapping
+
 /-- (2) Pole mapping from zeros of ξ to poles of `G(z)`.
     Given a zero `ρ` of multiplicity `m ≥ 1` of an analytic `xi`, define
 
@@ -137,14 +169,13 @@ theorem xi_zero_pole
   {ρ : ℂ} (hρ0 : ρ ≠ 0) (hρ : xi ρ = 0) :
   ¬ AnalyticAt ℂ (fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2)
       (1 - 1/ρ) := by
-  /- Sketch:
-     • Near s = ρ, `xi'/xi` has a simple pole (order = multiplicity of zero).
-     • Compose with s(z) = 1/(1-z): s has a simple pole at zρ = 1 - 1/ρ,
-       hence the composition inherits a non-removable singularity.
-     • Multiplying by s'(z) = (1/(1-z))^2 adjusts the order but does not remove the pole.
-     Use `IsolatedZeros`, `Meromorphic` facts, or build directly via `LaurentSeries`.
-  -/
-  sorry
+  -- Reduce to a general composition lemma tailored to s(z) = 1/(1 - z).
+  -- The core input: log-derivative is non-analytic at a zero ρ of xi.
+  have h_logderiv_pole : ¬ AnalyticAt ℂ (fun s => (deriv xi s) / xi s) ρ :=
+    LogDerivative.nonanalytic_at_zero xi hxi_analytic hρ
+  -- Pull back along s(z) = 1/(1 - z) and multiply by s'(z) = (1/(1 - z))^2.
+  -- This preserves non-analyticity and places the singularity at zρ = 1 - 1/ρ.
+  exact PoleMapping.compose_log_deriv_mobius xi hxi_analytic h_logderiv_pole hρ0
 
 
 /-- (3) Geometry of ρ ↦ zρ on the disc:
