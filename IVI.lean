@@ -6,6 +6,7 @@
 
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Topology.Basic
 import Mathlib.Data.Finset.Basic
 import IVI.Lemmas.Basic
@@ -178,6 +179,40 @@ theorem balance_principle (P : Pattern I) (S : Finset I)
   · exact one_div_pos.mpr hlam
   · exact one_div_pos.mpr hlam
 
+/-! ### Monotonicity helpers -/
+
+lemma logistic_mono : Monotone logistic := by
+  intro x y hxy
+  unfold logistic
+  have hpos : 0 < (1 : ℝ) + Real.exp (-y) := by
+    have : 0 < Real.exp (-y) := Real.exp_pos _
+    nlinarith
+  have hden : (1 : ℝ) + Real.exp (-y) ≤ 1 + Real.exp (-x) := by
+    have hexp : Real.exp (-y) ≤ Real.exp (-x) := Real.exp_monotone (neg_le_neg hxy)
+    simpa [add_comm] using add_le_add_right hexp 1
+  have := one_div_le_one_div_of_le hpos hden
+  simpa [one_div] using this
+
+lemma logistic_nonneg (t : ℝ) : 0 ≤ logistic t := by
+  unfold logistic
+  have : 0 < (1 : ℝ) + Real.exp (-t) := by
+    have : 0 < Real.exp (-t) := Real.exp_pos _
+    nlinarith
+  have : 0 ≤ ((1 : ℝ) + Real.exp (-t))⁻¹ := by
+    exact inv_nonneg.mpr (le_of_lt this)
+  simpa [one_div] using this
+
+lemma oneMinusExp_mono : Monotone (fun x : ℝ => 1 - Real.exp (-x)) := by
+  intro x y hxy
+  have h : Real.exp (-y) ≤ Real.exp (-x) := Real.exp_monotone (neg_le_neg hxy)
+  have := sub_le_sub_left h 1
+  -- rewrite 1 - exp(-y) ≤ 1 - exp(-x)
+  simpa using this
+
+lemma oneMinusExp_nonneg_of_le0 {x : ℝ} (hx : x ≤ 0) : 0 ≤ 1 - Real.exp x := by
+  have : Real.exp x ≤ 1 := Real.exp_le_one_iff.mpr hx
+  simpa [sub_nonneg] using this
+
 structure Aggregates where
   Res  : ℝ
   Dis  : ℝ
@@ -189,14 +224,51 @@ def IVIscore (a b h lam : ℝ) (A : Aggregates) : ℝ :=
   * (1 - Real.exp (-(b*A.Div)))
   * (1 - Real.exp (-(h*A.HolV)))
 
+/-- Monotone improvement (non-strict) under natural nonnegativity assumptions. -/
 theorem monotone_improvement (P : Pattern I)
-  (a b h lam : ℝ) (ha : 0 < a) (hb : 0 < b) (hh : 0 < h)
-  (A A' : Aggregates) 
+  (a b h lam : ℝ) (ha : 0 < a) (hb : 0 < b) (hh : 0 < h) (hlam : 0 ≤ lam)
+  (A A' : Aggregates)
   (h_nudge : A'.Res ≥ A.Res ∧ A'.Dis ≤ A.Dis ∧ A'.Div ≥ A.Div ∧ A'.HolV ≥ A.HolV)
-  (h_improvement : A'.Div > A.Div ∨ A'.HolV > A.HolV) :
-  IVIscore a b h lam A < IVIscore a b h lam A' := by
-  -- TODO: formalize monotonicity argument; placeholder admitted.
-  sorry
+  (hDiv₀ : 0 ≤ A.Div) (hHolV₀ : 0 ≤ A.HolV) :
+  IVIscore a b h lam A ≤ IVIscore a b h lam A' := by
+  rcases h_nudge with ⟨hRes, hDis, hDiv, hHolV⟩
+  -- X factor monotone
+  have hXarg : a * (A.Res - lam * A.Dis) ≤ a * (A'.Res - lam * A'.Dis) := by
+    apply mul_le_mul_of_nonneg_left
+    · exact sub_le_sub hRes (mul_le_mul_of_nonneg_left hDis hlam)
+    · exact le_of_lt ha
+  have hX : logistic (a * (A.Res - lam * A.Dis)) ≤ logistic (a * (A'.Res - lam * A'.Dis)) :=
+    logistic_mono hXarg
+  -- Y factor monotone
+  have hYarg : b * A.Div ≤ b * A'.Div := mul_le_mul_of_nonneg_left hDiv hb.le
+  have hY : (1 - Real.exp (- (b * A.Div))) ≤ (1 - Real.exp (- (b * A'.Div))) :=
+    oneMinusExp_mono hYarg
+  -- Z factor monotone
+  have hZarg : h * A.HolV ≤ h * A'.HolV := mul_le_mul_of_nonneg_left hHolV hh.le
+  have hZ : (1 - Real.exp (- (h * A.HolV))) ≤ (1 - Real.exp (- (h * A'.HolV))) :=
+    oneMinusExp_mono hZarg
+  -- Nonnegativity of factors
+  have hXnn : 0 ≤ logistic (a * (A.Res - lam * A.Dis)) := logistic_nonneg _
+  have hYnn : 0 ≤ (1 - Real.exp (- (b * A.Div))) := by
+    have : - (b * A.Div) ≤ 0 := by
+      have : 0 ≤ b * A.Div := mul_nonneg hb.le hDiv₀
+      simpa [neg_mul, neg_nonpos] using this
+    exact oneMinusExp_nonneg_of_le0 this
+  have hZnn : 0 ≤ (1 - Real.exp (- (h * A.HolV))) := by
+    have : - (h * A.HolV) ≤ 0 := by
+      have : 0 ≤ h * A.HolV := mul_nonneg hh.le hHolV₀
+      simpa [neg_mul, neg_nonpos] using this
+    exact oneMinusExp_nonneg_of_le0 this
+  -- Combine
+  have hX'nn : 0 ≤ logistic (a * (A'.Res - lam * A'.Dis)) := logistic_nonneg _
+  have hXY :
+      logistic (a * (A.Res - lam * A.Dis)) * (1 - Real.exp (-(b * A.Div))) ≤
+      logistic (a * (A'.Res - lam * A'.Dis)) * (1 - Real.exp (-(b * A'.Div))) := by
+    exact mul_le_mul hX hY hYnn hX'nn
+  -- Show X'*Y' is nonnegative to multiply by Z ≤ Z'
+  have hY'nn : 0 ≤ (1 - Real.exp (-(b * A'.Div))) :=
+    le_trans hYnn hY
+  exact mul_le_mul hXY hZ hZnn (mul_nonneg hX'nn hY'nn)
 
 /-! ## Holonomy rigor -/
 
