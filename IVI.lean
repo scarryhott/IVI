@@ -5,7 +5,7 @@
 -/
 
 import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Analysis.NormedSpace.Basic
+import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Topology.Basic
 import Mathlib.Data.Finset.Basic
 import IVI.Lemmas.Basic
