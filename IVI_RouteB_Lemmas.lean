@@ -46,6 +46,58 @@ theorem nonanalytic_at_zero
 
 end LogDerivative
 
+/-- The specific Möbius map `s(z) = 1/(1 - z)` used in Route B. -/
+namespace Mobius
+
+/-- The map `s(z) = 1/(1 - z)`. -/
+def s (z : ℂ) : ℂ := 1 / (1 - z)
+
+/-- Evaluation at the preimage of `ρ`: `s(1 - 1/ρ) = ρ`. -/
+lemma s_at_preimage {ρ : ℂ} : s (1 - 1/ρ) = ρ := by
+  -- 1 - (1 - 1/ρ) = 1/ρ, so 1 / (1/ρ) = ρ
+  simp [s, sub_sub, sub_self, one_div]
+
+/-- Derivative identity away from the singular line: `deriv s z = (1/(1 - z))^2`
+    for `z ≠ 1`. This matches the formal chain-rule factor in Route B. -/
+lemma deriv_s_eq_sq (z : ℂ) (hz : z ≠ 1) :
+  deriv s z = (1 / (1 - z))^2 := by
+  /- Proof idea: s(z) = (1 - z)⁻¹, so deriv s = -(-1) * (1 - z)⁻² = (1 - z)⁻².
+     We leave the formal differentiation to a later pass. -/
+  have h1 : HasDerivAt (fun z : ℂ => (1:ℂ) - z) (-1) z := by
+    simpa using ((hasDerivAt_const (z := z) (c := (1:ℂ))).sub (hasDerivAt_id z))
+  have hz' : (1 : ℂ) - z ≠ 0 := by
+    have : (1 : ℂ) ≠ z := by simpa using (ne_comm.mp hz)
+    exact sub_ne_zero.mpr this
+  have h2 := h1.inv hz'
+  have h2' : HasDerivAt s (1 / (1 - z)^2) z := by
+    simpa [s, one_div, sub_eq_add_neg] using h2
+  -- Convert to `deriv` and rewrite the RHS into the requested form
+  have : deriv s z = 1 / (1 - z)^2 := h2'.deriv
+  simpa [pow_two, one_div] using this
+
+/-- At `zρ = 1 - 1/ρ` with `ρ ≠ 0`, the derivative `s'(zρ)` is nonzero. -/
+lemma deriv_s_ne_zero_at_preimage {ρ : ℂ} (hρ0 : ρ ≠ 0) :
+  deriv s (1 - 1/ρ) ≠ 0 := by
+  have hz : 1 - 1/ρ ≠ (1 : ℂ) := by
+    -- 1 - 1/ρ = 1  ↔  1/ρ = 0  ↔  ρ = 0
+    have hne : (1 / ρ) ≠ 0 := by simpa [one_div] using inv_ne_zero hρ0
+    intro hcontra
+    have hzero : (1 / ρ) = 0 := by
+      have := congrArg (fun t => 1 - t) hcontra
+      simpa [sub_self] using this
+    exact hne hzero
+  have hderiv := deriv_s_eq_sq (1 - 1/ρ) hz
+  -- Using s(1 - 1/ρ) = ρ, rewrite the derivative value and use ρ ≠ 0
+  -- deriv s zρ = (1/(1 - zρ))^2 = (s zρ)^2 = ρ^2
+  have hval : deriv s (1 - 1/ρ) = (Mobius.s (1 - 1/ρ))^2 := by
+    simpa [Mobius.s, pow_two, one_div] using hderiv
+  have hne_sq : (Mobius.s (1 - 1/ρ))^2 ≠ 0 := by
+    have hsz : Mobius.s (1 - 1/ρ) ≠ 0 := by simpa [Mobius.s_at_preimage] using hρ0
+    exact pow_ne_zero 2 hsz
+  simpa [hval] using hne_sq
+
+end Mobius
+
 /-!
 Neumann resolvent for bounded operators:
 R(z) = ∑ z^n • U^n,  ‖U‖ ≤ 1  ⇒  (I - z•U) ∘ R(z) = R(z) ∘ (I - z•U) = I for ‖z‖<1,
@@ -126,13 +178,13 @@ theorem resolvent_analytic_scaffold
 
 
 /-- Pullback principle for the specific Möbius map `s(z) = 1/(1-z)`.
-    If the logarithmic derivative `(xi'/xi)` is non-analytic at `ρ ≠ 0`, then
-    the composed quantity
+    If the logarithmic derivative `(xi'/xi)` is non-analytic at `ρ ≠ 0`, and
+    `s(zρ) = ρ` with `s'(zρ) ≠ 0`, then the composed quantity
 
       G(z) = (xi' (1/(1-z)) / xi (1/(1-z))) * (1/(1-z))^2
 
-    is non-analytic at `zρ := 1 - 1/ρ` (indeed has a pole). This is the exact
-    shape used in Route B. -/
+    is non-analytic at `zρ := 1 - 1/ρ` (it has a pole corresponding to the
+    one of `(xi'/xi)` at `ρ`). This is the exact shape used in Route B. -/
 namespace PoleMapping
 
 variable {ρ : ℂ}
@@ -144,14 +196,13 @@ theorem compose_log_deriv_mobius
   ¬ AnalyticAt ℂ (fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2)
       (1 - 1/ρ) := by
   /- Proof idea (to be filled):
-     • The Möbius map s(z) = 1/(1 - z) has a simple pole at zρ = 1 - 1/ρ,
-       mapping zρ to s = ρ. Thus zρ is the unique preimage of ρ along s in a
-       punctured neighborhood.
-     • If (xi'/xi) has a non-removable singularity at ρ, then by composition
-       through a map with simple pole at zρ, the function (xi'/xi)∘s has a
-       non-removable singularity at zρ.
-     • Multiplying by s'(z) = (1/(1 - z))^2 (which also has a simple pole at zρ)
-       does not remove the singularity. Conclude non-analyticity at zρ.
+     • Set `s(z) = 1/(1 - z)`. At `zρ := 1 - 1/ρ` we have `s(zρ) = ρ` and
+       `s'(zρ) ≠ 0` (local biholomorphism).
+     • If `(xi'/xi)` has a non-removable singularity at `ρ`, then the pullback
+       `(xi'/xi) ∘ s` has a non-removable singularity at `zρ` by composition
+       with a noncritical analytic map sending `zρ` to `ρ`.
+     • The extra analytic, nonvanishing factor `s'(z) = (1/(1 - z))^2` near `zρ`
+       cannot eliminate the singularity. Conclude non-analyticity at `zρ`.
   -/
   sorry
 
