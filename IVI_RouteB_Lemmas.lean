@@ -28,12 +28,50 @@ theorem resolvent_analytic
   (U : H →L[ℂ] H) (hU : ‖U‖ ≤ 1) :
   AnalyticOn ℂ (fun z => (ContinuousLinearMap.id ℂ H - z • U).inverse)
     (Metric.ball (0 : ℂ) 1) := by
-  /- Idea: use Neumann series
-       R(z) = ∑_{n≥0} z^n • U^n
-     which converges for ‖z‖ < 1/‖U‖, hence on ball(0,1) when ‖U‖ ≤ 1.
-     Then show `(I - zU) ∘ R(z) = I = R(z) ∘ (I - zU)` and termwise differentiability.
-     In mathlib, you can also invoke `HasFPowerSeriesOnBall` variants.
+  /- Neumann-series strategy:
+     Define R(z) := ∑_{n=0}^∞ z^n • (U^n) in the Banach algebra of endomorphisms.
+     For ‖z‖ < 1 and ‖U‖ ≤ 1, the series converges absolutely since
+       ‖z^n • U^n‖ ≤ ‖z‖^n ‖U‖^n ≤ ‖z‖^n, a geometric series.
+     Thus R has a power series expansion on ball 0 1, hence is analytic there.
+     Moreover, (I - z•U) ∘ R(z) = id = R(z) ∘ (I - z•U), so R(z) = (I - z•U)⁻¹,
+     and equality with `inverse` holds on the ball.
   -/
+  -- 1) Work in the Banach algebra of endomorphisms.
+  let A := (ContinuousLinearMap.id ℂ H)
+  have hA : ‖U‖ ≤ 1 := hU
+  -- 2) Define operator powers and the Neumann series.
+  let powU : ℕ → (H →L[ℂ] H) := fun n => U^n
+  have norm_powU : ∀ n, ‖powU n‖ ≤ ‖U‖^n := by
+    intro n; simpa [powU] using ContinuousLinearMap.opNorm_pow_le U n
+  -- 3) Define the candidate resolvent as a series in z.
+  let R : ℂ → (H →L[ℂ] H) := fun z => ∑' n : ℕ, (z^n) • (powU n)
+  -- 4) Show R is analytic on ball 0 1 by HasFPowerSeriesOnBall with coefficients aₙ = U^n.
+  have hR_analytic : AnalyticOn ℂ R (Metric.ball (0 : ℂ) 1) := by
+    -- Use standard power-series analyticity criterion with radius ≥ 1.
+    -- Key estimate: ‖(z^n) • U^n‖ ≤ ‖z‖^n · ‖U‖^n ≤ ‖z‖^n, summable on ‖z‖ < 1.
+    -- Conclude: `R` has an fpower series on ball 0 1.
+    sorry
+  -- 5) On the ball, prove (I - z•U) ∘ R(z) = id and R(z) ∘ (I - z•U) = id by summing geometric series.
+  have h_resolvent (z : ℂ) (hz : ‖z‖ < 1) :
+      (A - z • U).comp (R z) = A ∧ (R z).comp (A - z • U) = A := by
+    -- Algebraic telescoping sums for geometric series of operators.
+    -- Both sides hold since ∑ z^n U^n is the Neumann series for (I - zU)⁻¹.
+    sorry
+  -- 6) Conclude equality with `inverse` and analyticity of the inverse map on the ball.
+  -- On the ball, (A - z • U) is invertible with inverse R z.
+  have h_inv (z : ℂ) (hz : ‖z‖ < 1) :
+      IsUnit (A - z • U) := by
+    -- Provide the explicit inverse R z via left and right inverse equations above.
+    have h1 := (h_resolvent z hz).1
+    have h2 := (h_resolvent z hz).2
+    -- Build an explicit unit from left/right inverse in a monoid.
+    sorry
+  -- 7) Finally, rewrite the target map as R on the ball and inherit analyticity.
+  refine (hR_analytic.congr ?hEq)
+  intro z hz
+  -- On the ball, inverse equals the Neumann series inverse.
+  -- Use uniqueness of inverses in a monoid to conclude `(A - z•U).inverse = R z`.
+  -- Also tie to ContinuousLinearMap.inverse definition on units.
   sorry
 
 
@@ -101,20 +139,50 @@ theorem map_zero_to_disc_iff
     -- From the standard identity ‖ρ - 1‖^2 = (ρ.re - 1)^2 + (ρ.im)^2 and
     -- ‖ρ‖^2 = (ρ.re)^2 + (ρ.im)^2, we get 1 - 2*ρ.re < 0.
     -- Hence ρ.re > 1/2.
+    have hLsq : ‖ρ - 1‖^2 = (ρ.re - 1)^2 + (ρ.im)^2 := by
+      have hnn : 0 ≤ ((ρ - 1).re)^2 + ((ρ - 1).im)^2 := by
+        exact add_nonneg (sq_nonneg _) (sq_nonneg _)
+      -- expand the complex norm via its definition
+      have : ‖ρ - 1‖^2 = (Real.sqrt (((ρ - 1).re)^2 + ((ρ - 1).im)^2))^2 := by
+        simp [Complex.norm_eq_abs, Complex.abs, pow_two]
+      simpa [Real.sq_sqrt hnn, Complex.sub_re, Complex.sub_im, sub_eq_add_neg] using this
+    have hRsq : ‖ρ‖^2 = (ρ.re)^2 + (ρ.im)^2 := by
+      have hnn : 0 ≤ (ρ.re)^2 + (ρ.im)^2 := by exact add_nonneg (sq_nonneg _) (sq_nonneg _)
+      have : ‖ρ‖^2 = (Real.sqrt ((ρ.re)^2 + (ρ.im)^2))^2 := by
+        simp [Complex.norm_eq_abs, Complex.abs, pow_two]
+      simpa [Real.sq_sqrt hnn] using this
+    have hsq' : (ρ.re - 1)^2 + (ρ.im)^2 < (ρ.re)^2 + (ρ.im)^2 := by
+      simpa [hLsq, hRsq] using hsq
+    have h_re_sq : (ρ.re - 1)^2 < (ρ.re)^2 := by
+      exact lt_of_add_lt_add_right hsq'
+    have h_poly : (ρ.re)^2 - 2 * ρ.re + 1 < (ρ.re)^2 := by
+      simpa [pow_two, sub_eq_add_neg, add_comm, add_left_comm, add_assoc, two_mul] using h_re_sq
     have : ρ.re > (1/2 : ℝ) := by
-      -- Fill with your preferred mathlib equalities for squared norms of ℂ.
-      -- Short algebra: (ρ.re - 1)^2 + ρ.im^2 < ρ.re^2 + ρ.im^2 ⇒ 1 - 2ρ.re < 0.
-      sorry
+      have h' : 1 - 2 * ρ.re < 0 := by linarith
+      linarith
     exact this
   · intro hRe
     -- Reverse direction: ρ.re > 1/2 ⇒ ‖ρ - 1‖ < ‖ρ‖ ⇒ ‖1 - 1/ρ‖ < 1
     have hineq : (1 : ℝ) - 2 * ρ.re < 0 := by linarith
     -- Convert back to norms using the same expansions as above
-    have hsq : ‖ρ - 1‖^2 < ‖ρ‖^2 := by
-      -- Using the same squared-norm identities, this is equivalent to
-      -- 1 - 2*ρ.re < 0; we rewrite and conclude.
-      -- Provide your preferred equalities in your environment.
-      sorry
+    have hLsq : ‖ρ - 1‖^2 = (ρ.re - 1)^2 + (ρ.im)^2 := by
+      have hnn : 0 ≤ ((ρ - 1).re)^2 + ((ρ - 1).im)^2 := by
+        exact add_nonneg (sq_nonneg _) (sq_nonneg _)
+      have : ‖ρ - 1‖^2 = (Real.sqrt (((ρ - 1).re)^2 + ((ρ - 1).im)^2))^2 := by
+        simp [Complex.norm_eq_abs, Complex.abs, pow_two]
+      simpa [Real.sq_sqrt hnn, Complex.sub_re, Complex.sub_im, sub_eq_add_neg] using this
+    have hRsq : ‖ρ‖^2 = (ρ.re)^2 + (ρ.im)^2 := by
+      have hnn : 0 ≤ (ρ.re)^2 + (ρ.im)^2 := by exact add_nonneg (sq_nonneg _) (sq_nonneg _)
+      have : ‖ρ‖^2 = (Real.sqrt ((ρ.re)^2 + (ρ.im)^2))^2 := by
+        simp [Complex.norm_eq_abs, Complex.abs, pow_two]
+      simpa [Real.sq_sqrt hnn] using this
+    have h_re_sq : (ρ.re - 1)^2 < (ρ.re)^2 := by
+      -- from 1 - 2*ρ.re < 0, expand squares to get the inequality
+      have : (ρ.re)^2 - 2 * ρ.re + 1 < (ρ.re)^2 := by linarith
+      simpa [pow_two, sub_eq_add_neg, add_comm, add_left_comm, add_assoc, two_mul] using this
+    have hsum : (ρ.re - 1)^2 + (ρ.im)^2 < (ρ.re)^2 + (ρ.im)^2 := by
+      simpa [add_comm, add_left_comm, add_assoc] using add_lt_add_right h_re_sq ((ρ.im)^2)
+    have hsq : ‖ρ - 1‖^2 < ‖ρ‖^2 := by simpa [hLsq, hRsq] using hsum
     have hnorm : ‖ρ - 1‖ < ‖ρ‖ := by
       have hnn1 : 0 ≤ ‖ρ - 1‖ := norm_nonneg _
       have hnn2 : 0 ≤ ‖ρ‖ := norm_nonneg _
