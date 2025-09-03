@@ -57,6 +57,8 @@ lean_lib "IVI_RouteB_Internal_Specialize" where
 lean_lib "IVI_RouteB_Internal_Adapters" where
   -- Small helpers to derive required hypotheses for the internal specialization
 
+lean_lib "IVI_RouteB_Internal_Geometry" where
+  -- Local geometry lemmas for disc map
 
 @[default_target]
 lean_exe "ivi" where

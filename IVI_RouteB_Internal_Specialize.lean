@@ -19,6 +19,7 @@ Conclusion: `IVI_Internal.RH_xi xi`.
 
 import IVI_Internal_RH
 import Mathlib.Analysis.Analytic.Basic
+import IVI_RouteB_Internal_Geometry
 
 open Complex
 
@@ -58,5 +59,23 @@ theorem internal_RH_via_bridge
       simpa [hFE ρ] using this
   -- 4) Conclude via the internal wrapper.
   exact IVI_Internal.internal_RH_proof xi G Φ hGanalyticAt xi_zero_pole_fn map_zero_to_disc_iff' zeros_symmetry'
+
+/-- Variant: uses the local geometry lemma to supply the disc-map equivalence. -/
+theorem internal_RH_via_bridge_geom
+    (xi Φ E : ℂ → ℂ)
+    (hxi_analytic : AnalyticOn ℂ xi Set.univ)
+    (hXiNontriv : ∃ s, xi s ≠ 0)
+    (hFE : ∀ s, xi s = xi (1 - s))
+    (hNontrivZero : ∀ ρ, xi ρ = 0 → ρ ≠ 0)
+    (xi_zero_pole_core : ∀ ρ : ℂ, xi ρ = 0 → ρ ≠ 0 →
+        ¬ AnalyticAt ℂ E (1 - 1/ρ))
+    (hGanalyticAt : ∀ z ∈ Metric.ball (0 : ℂ) 1, AnalyticAt ℂ E z)
+  : IVI_Internal.RH_xi xi := by
+  classical
+  -- Build the geometry equivalence from the local lemma.
+  let map_zero_to_disc_iff : ∀ ρ : ℂ, ρ ≠ 0 → xi ρ = 0 → (‖(1 : ℂ) - 1/ρ‖ < 1 ↔ ρ.re > (1/2 : ℝ)) :=
+    fun ρ hρ0 _ => IVI_RouteB_Internal_Geometry.map_zero_to_disc_iff_geom ρ hρ0
+  -- Delegate to the main specialization with an explicit geometry argument.
+  refine internal_RH_via_bridge xi Φ E hxi_analytic hXiNontriv hFE map_zero_to_disc_iff hNontrivZero xi_zero_pole_core hGanalyticAt
 
 end IVI_RouteB_Internal_Specialize

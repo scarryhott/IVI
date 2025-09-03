@@ -4,6 +4,7 @@ import IVI_Internal_RH
 import IVI_RouteB_Internal_Instantiate
 import IVI_RouteB_Internal_Specialize
 import IVI_RouteB_Internal_Adapters
+import IVI_RouteB_Internal_Geometry
 
 /-! ## Main Entry Point with Hygiene Checks -/
 variable {I : Type*} [Fintype I]
@@ -49,10 +50,12 @@ variable {I : Type*} [Fintype I]
 #check IVI_RouteB_Internal_Instantiate.demo_internal_RH_trivial
 -- Skeleton to specialize Route B with your canonical xi and bridge
 #check IVI_RouteB_Internal_Specialize.internal_RH_via_bridge
+#check IVI_RouteB_Internal_Specialize.internal_RH_via_bridge_geom
 -- Adapters and canonical E(z) using xi_log_deriv
 #check IVI_RouteB_Internal_Adapters.E_canonical
 -- Geometry equivalence for the map ρ ↦ 1 - 1/ρ
 -- Geometry equivalence for the map ρ ↦ 1 - 1/ρ
+#check IVI_RouteB_Internal_Geometry.map_zero_to_disc_iff_geom
 
 -- Adelic geometry beyond groups
 -- #check IVI_paradox_resolution
