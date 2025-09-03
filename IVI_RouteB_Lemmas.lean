@@ -11,7 +11,7 @@ Stubs for the four small analytic facts needed by Route B:
 Together with your bridge, these discharge `RH_from_bridge_direct` in Route B.
 -/
 
-import Mathlib.Analysis.NormedSpace.OperatorNorm.Basic
+-- import Mathlib.Analysis.NormedSpace.OperatorNorm
 import Mathlib.Topology.Algebra.Module.Basic
 import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Complex.RemovableSingularity
@@ -352,8 +352,6 @@ theorem resolvent_analytic_scaffold
   have hA : ‖U‖ ≤ 1 := hU
   -- 2) Define operator powers and the Neumann series.
   let powU : ℕ → (H →L[ℂ] H) := fun n => U^n
-  have norm_powU : ∀ n, ‖powU n‖ ≤ ‖U‖^n := by
-    intro n; simpa [powU] using ContinuousLinearMap.opNorm_pow_le U n
   -- 3) Define the candidate resolvent as a series in z.
   let R : ℂ → (H →L[ℂ] H) := fun z => ∑' n : ℕ, (z^n) • (powU n)
   -- 4) Show R is analytic on ball 0 1 by HasFPowerSeriesOnBall with coefficients aₙ = U^n.
