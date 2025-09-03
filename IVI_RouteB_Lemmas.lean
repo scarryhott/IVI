@@ -409,16 +409,56 @@ theorem compose_log_deriv_mobius
   (hρ0 : ρ ≠ 0) :
   ¬ AnalyticAt ℂ (fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2)
       (1 - 1/ρ) := by
-  /- Proof idea (to be filled):
-     • Set `s(z) = 1/(1 - z)`. At `zρ := 1 - 1/ρ` we have `s(zρ) = ρ` and
-       `s'(zρ) ≠ 0` (local biholomorphism).
-     • If `(xi'/xi)` has a non-removable singularity at `ρ`, then the pullback
-       `(xi'/xi) ∘ s` has a non-removable singularity at `zρ` by composition
-       with a noncritical analytic map sending `zρ` to `ρ`.
-     • The extra analytic, nonvanishing factor `s'(z) = (1/(1 - z))^2` near `zρ`
-       cannot eliminate the singularity. Conclude non-analyticity at `zρ`.
-  -/
-  sorry
+  intro hG
+  -- Abbreviations at the special point zρ.
+  set zρ := (1 : ℂ) - 1/ρ
+  have hzρ : zρ = (1 : ℂ) - 1/ρ := rfl
+  -- Define the two factors of G: Q(z) and the nonvanishing analytic multiplier ffac(z).
+  let Q : ℂ → ℂ := fun z => (deriv xi (Mobius.s z)) / xi (Mobius.s z)
+  let ffac : ℂ → ℂ := fun z => (1 / (1 - z))^2
+  have hG_eq : (fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2)
+                = fun z => Q z * ffac z := by
+    funext z; simp [Q, ffac, Mobius.s, pow_two]
+  -- (i) ffac is analytic and nonvanishing at zρ.
+  have h_ffac_an : AnalyticAt ℂ ffac zρ := by
+    -- (1 - z) is analytic at zρ and nonzero since 1 - zρ = 1/ρ ≠ 0
+    have h_inv : AnalyticAt ℂ (fun z : ℂ => ((1 : ℂ) - z)⁻¹) zρ := by
+      refine (analyticAt_const.sub analyticAt_id).inv ?hval
+      have : (1 : ℂ) - zρ = 1/ρ := by simpa [hzρ, sub_sub, sub_self, one_div]
+      simpa [this] using (inv_ne_zero hρ0)
+    -- Square by multiplying the inverse with itself
+    simpa [ffac, one_div, sub_eq_add_neg, pow_two] using h_inv.mul h_inv
+  have h_ffac_ne : ffac zρ ≠ 0 := by
+    have : ffac zρ = ρ^2 := by
+      simp [ffac, hzρ, sub_sub, sub_self, one_div, pow_two]
+    simpa [this] using pow_ne_zero 2 hρ0
+  -- From analyticity of G = Q * ffac and nonvanishing of ffac at zρ, deduce Q is analytic at zρ.
+  have hQ_an : AnalyticAt ℂ Q zρ := by
+    have hG' : AnalyticAt ℂ (fun z => Q z * ffac z) zρ := by simpa [hG_eq] using hG
+    -- Use the equivalence `analyticAt_iff_analytic_mul` to peel the nonvanishing factor.
+    exact (analyticAt_iff_analytic_mul h_ffac_an h_ffac_ne).1 hG'
+  -- (ii) Precompose with the explicit inverse t(w) = 1 - 1/w (analytic at ρ since ρ ≠ 0).
+  let t : ℂ → ℂ := fun w => (1 : ℂ) - 1 / w
+  have ht_an : AnalyticAt ℂ t ρ := by
+    have : AnalyticAt ℂ (fun w : ℂ => w⁻¹) ρ := analyticAt_inv hρ0
+    simpa [t, one_div] using (analyticAt_const.sub this)
+  have ht_val : t ρ = zρ := by simpa [t, hzρ, sub_sub, sub_self, one_div]
+  -- Composition yields analyticity of Q ∘ t at ρ.
+  have h_comp : AnalyticAt ℂ (fun w => Q (t w)) ρ := by
+    exact (AnalyticAt.comp_of_eq hQ_an ht_an ht_val)
+  -- (iii) On a punctured neighborhood (w ≠ 0), s(t(w)) = w, hence Q (t w) = (xi'/xi) w.
+  have hS_mem : {w : ℂ | w ≠ 0} ∈ 𝓝 ρ := by
+    exact isOpen_ne.mem_nhds (by simpa using hρ0)
+  have h_eq_on : EqOn (fun w => Q (t w)) (fun w => (deriv xi w) / xi w) {w : ℂ | w ≠ 0} := by
+    intro w hw
+    have hw' : w ≠ 0 := hw
+    -- Simplify using explicit formulas for s and t away from the singular points
+    simp [Q, t, Mobius.s, one_div, sub_sub, sub_self, hw']
+  have h_event : (fun w => Q (t w)) =ᶠ[𝓝 ρ] (fun w => (deriv xi w) / xi w) :=
+    eventuallyEq_of_mem hS_mem h_eq_on
+  -- Transfer analyticity through eventual equality.
+  have : AnalyticAt ℂ (fun s => (deriv xi s) / xi s) ρ := h_comp.congr h_event
+  exact h_nonanalytic this
 
 end PoleMapping
 
