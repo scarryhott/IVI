@@ -48,6 +48,9 @@ lean_lib "IVI_RouteB_Direct_RH" where
 lean_lib "IVI_Internal_RH" where
   -- Internal wrapper around Route B to expose a clean entrypoint
 
+lean_lib "IVI_RouteB_Internal_Instantiate" where
+  -- Demo instantiation of the internal Route B wrapper
+
 @[default_target]
 lean_exe "ivi" where
   root := `Main

@@ -1,6 +1,7 @@
 import IVI
 import IVI_Bridge_Minimal
 import IVI_Internal_RH
+import IVI_RouteB_Internal_Instantiate
 
 /-! ## Main Entry Point with Hygiene Checks -/
 variable {I : Type*} [Fintype I]
@@ -42,6 +43,8 @@ variable {I : Type*} [Fintype I]
 
 -- Route B: Internal RH proof wrapper
 #check IVI_Internal.internal_RH_proof
+-- Demo instantiation (trivial xi): shows the API is ready
+#check IVI_RouteB_Internal_Instantiate.demo_internal_RH_trivial
 
 -- Adelic geometry beyond groups
 -- #check IVI_paradox_resolution
