@@ -42,7 +42,7 @@ theorem internal_RH_via_bridge
   -- Define the G used by the internal wrapper to be the canonical E(z).
   let G : ℂ → ℂ := E
   -- 1) G is analytic on the ball (input)
-  have hGanalyticAt : ∀ z ∈ Metric.ball (0 : ℂ) 1, AnalyticAt ℂ G z := hGanalyticAt
+  have hGanalyticAt' : ∀ z ∈ Metric.ball (0 : ℂ) 1, AnalyticAt ℂ G z := hGanalyticAt
   -- 2) Zero→pole mapping for G, using the general lemma.
   have xi_zero_pole_fn : ∀ ρ : ℂ, xi ρ = 0 → ¬ AnalyticAt ℂ G (1 - 1/ρ) := by
     intro ρ hρ
@@ -54,11 +54,12 @@ theorem internal_RH_via_bridge
     fun ρ hρ => map_zero_to_disc_iff ρ (hNontrivZero ρ hρ) hρ
   have zeros_symmetry' : ∀ ρ : ℂ, xi ρ = 0 → xi (1 - ρ) = 0 :=
     fun ρ hρ => by
-      -- Directly use the functional equation
-      have := congrArg id hρ
-      simpa [hFE ρ] using this
+      -- From hFE at s = 1 - ρ: xi (1 - ρ) = xi (1 - (1 - ρ)) = xi ρ = 0
+      have hsym : xi (1 - ρ) = xi ρ := by
+        simpa [sub_eq_add_neg, sub_sub, sub_self] using (hFE (1 - ρ))
+      simpa [hsym, hρ]
   -- 4) Conclude via the internal wrapper.
-  exact IVI_Internal.internal_RH_proof xi G Φ hGanalyticAt xi_zero_pole_fn map_zero_to_disc_iff' zeros_symmetry'
+  exact IVI_Internal.internal_RH_proof xi G Φ hGanalyticAt' xi_zero_pole_fn map_zero_to_disc_iff' zeros_symmetry'
 
 /-- Variant: uses the local geometry lemma to supply the disc-map equivalence. -/
 theorem internal_RH_via_bridge_geom

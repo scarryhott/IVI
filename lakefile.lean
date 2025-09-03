@@ -57,8 +57,9 @@ lean_lib "IVI_RouteB_Internal_Specialize" where
 lean_lib "IVI_RouteB_Internal_Adapters" where
   -- Small helpers to derive required hypotheses for the internal specialization
 
-lean_lib "IVI_RouteB_Internal_Geometry" where
-  -- Local geometry lemmas for disc map
+
+lean_lib "IVI_RouteB_Concrete_Instantiate" where
+  -- Concrete instantiation using E_canonical and a bridge Φ
 
 @[default_target]
 lean_exe "ivi" where

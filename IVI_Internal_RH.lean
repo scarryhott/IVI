@@ -41,9 +41,9 @@ theorem internal_RH_proof
     intro hlt
     have hζ : xi (1 - ρ) = 0 := zeros_symmetry ρ hξρ
     have hgt' : (1 - ρ).re > (1/2 : ℝ) := by
-      have : (1 - ρ).re = 1 - ρ.re := by simp
+      have hre : (1 - ρ).re = 1 - ρ.re := by simpa
       have : 1 - ρ.re > (1/2 : ℝ) := by linarith
-      simpa [this] using this
+      simpa [hre]
     have hz_in : ‖(1 : ℂ) - 1/(1 - ρ)‖ < 1 := (map_zero_to_disc_iff (1 - ρ) hζ).mpr hgt'
     have hzin : (1 - 1/(1 - ρ)) ∈ Metric.ball (0 : ℂ) 1 := by simpa [Metric.mem_ball] using hz_in
     have hAt : AnalyticAt ℂ G (1 - 1/(1 - ρ)) := hGanalyticAt _ hzin
