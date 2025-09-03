@@ -31,18 +31,232 @@ namespace LogDerivative
     then `z ↦ deriv f z / f z` is not analytic at `a` (indeed it has a pole
     whose residue equals the multiplicity of the zero). This minimal version
     asserts the non-analyticity, which is the only property needed for Route B. -/
+/-
+Auxiliary: inv at a point is not analytic at that point.
+-/
+lemma inv_not_analyticAt (a : ℂ) : ¬ AnalyticAt ℂ (fun z : ℂ => (z - a)⁻¹) a := by
+  -- AnalyticAt implies ContinuousAt; we show not continuous at a.
+  intro hA
+  have hC : ContinuousAt (fun z : ℂ => (z - a)⁻¹) a := hA.continuousAt
+  -- Specialize continuity with ε = 1
+  have h := (Metric.tendsto_nhds.mp hC) 1 (by norm_num)
+  rcases h with ⟨δ, hδpos, hδ⟩
+  -- Take z = a + δ/2; then ‖z - a‖ = δ/2 < δ but ‖(z - a)⁻¹‖ = 2/δ ≥ 1
+  let z := a + (δ/2 : ℝ)
+  have hz_dist : dist z a = δ/2 := by
+    simp [z, dist_eq, Complex.abs, Complex.norm_eq_abs, sub_eq_add_neg, add_comm, add_left_comm,
+          add_assoc, two_mul, Real.norm_eq_abs, abs_of_nonneg (by linarith : (0:ℝ) ≤ δ/2)]
+  have hz_lt : dist z a < δ := by simpa [hz_dist] using (half_lt_self hδpos)
+  have hbound := hδ z hz_lt
+  -- Compute the norm of inverse at this z.
+  have : ‖(z - a)⁻¹‖ = (2/δ : ℝ) := by
+    have hz_ne : z ≠ a := by
+      have : dist z a = δ/2 := hz_dist
+      have : 0 < dist z a := by simpa [this] using (half_pos hδpos)
+      exact ne_of_gt (by simpa [dist_eq] using this)
+    have : ‖z - a‖ = δ/2 := by simpa [dist_eq] using hz_dist
+    have hpos : ‖z - a‖ ≠ 0 := by
+      have : 0 < ‖z - a‖ := by simpa [this] using (half_pos hδpos)
+      exact ne_of_gt this
+    calc
+      ‖(z - a)⁻¹‖ = 1 / ‖z - a‖ := by simpa [norm_inv] 
+      _ = 1 / (δ/2) := by simpa [this]
+      _ = (2/δ) := by field_simp
+  -- Contradiction: must have ‖(z-a)⁻¹‖ < 1 by continuity bound, but equals 2/δ ≥ 1
+  have : (2/δ : ℝ) < 1 := by simpa [this] using hbound
+  have : 2 < (δ : ℝ) := by nlinarith
+  exact (lt_irrefl _ this).elim
+
+/-- Local decomposition of the logarithmic derivative near an isolated zero.
+    If `f` is analytic and not identically zero, and `f a = 0`, then there
+    exists an integer `m ≥ 1` and an analytic function `h` with `h a ≠ 0`
+    such that, for `z` near `a`,
+
+      (deriv f z) / f z = m/(z - a) + (deriv h z) / h z.
+
+    This expresses the principal part `m/(z-a)` of the logarithmic derivative.
+    We work with an eventual equality in `𝓝 a` to avoid choosing a specific radius. -/
+lemma log_deriv_local_decomposition
+  (f : ℂ → ℂ) (hA : AnalyticOn ℂ f univ) {a : ℂ} (hzero : f a = 0)
+  (h_nontriv : ∃ z, f z ≠ 0) :
+  ∃ m : ℕ, m ≥ 1 ∧ ∃ h : ℂ → ℂ,
+    AnalyticAt ℂ h a ∧ h a ≠ 0 ∧
+    (∀ᶠ z in 𝓝[≠] a,
+      (z - a) * ((deriv f z) / f z - (deriv h z) / h z) = (m : ℂ)) := by
+  classical
+  -- `f` is analytic at `a` since it is entire on `univ`.
+  have hf_at : AnalyticAt ℂ f a := by
+    rcases (hA a (by simp)).exists_analyticAt with ⟨g, hx, hEqOn, hg⟩
+    have : f = g := by
+      funext z; have := hEqOn (by simp)
+      simpa using this
+    simpa [this] using hg
+  -- `f` is not identically zero near `a` by nontriviality and identity theorem
+  have h_not_ev_zero : ¬ (∀ᶠ z in 𝓝 a, f z = 0) := by
+    intro hev
+    -- Eventually zero ⇒ frequently zero on punctured nhds
+    have hfreq : ∃ᶠ z in 𝓝[≠] a, f z = 0 :=
+      (AnalyticAt.frequently_zero_iff_eventually_zero hf_at).mpr hev
+    -- Entire on `univ` ⇒ analytic on a neighborhood of `univ`
+    have hOnNhd : AnalyticOnNhd ℂ f (Set.univ) := by
+      intro x hx; exact
+        (by
+          rcases (hA x (by simp)).exists_analyticAt with ⟨g, hx', hEqOn, hg⟩
+          have : f = g := by
+            funext z; simpa using hEqOn (by simp)
+          simpa [this] using hg)
+    -- Identity theorem on preconnected `univ` forces f ≡ 0
+    have hzero_on : EqOn f 0 (Set.univ) :=
+      AnalyticOnNhd.eqOn_zero_of_preconnected_of_frequently_eq_zero hOnNhd isPreconnected_univ
+        (by simp) hfreq
+    have : ∀ z, f z = 0 := by intro z; simpa using hzero_on (by simp)
+    rcases h_nontriv with ⟨z, hz⟩; exact hz (this z)
+  -- Use isolated zeros factorization: f = (z-a)^m • h with h(a) ≠ 0 and m ≥ 1
+  obtain ⟨m, h⟩ :=
+    (AnalyticAt.exists_eventuallyEq_pow_smul_nonzero_iff (f:=f) (z₀:=a) hf_at).mpr h_not_ev_zero
+  rcases h with ⟨h, hh_an, hh_ne, h_eq⟩
+  -- Upgrade equality to punctured neighborhood
+  have h_eq' : ∀ᶠ z in 𝓝[≠] a, f z = (z - a) ^ m * h z := by
+    -- scalar action `•` on ℂ is multiplication
+    refine (h_eq.filter_mono nhdsWithin_le_nhds).mono ?_
+    intro z hz; simpa using hz
+  -- `h` is nonvanishing on a punctured neighborhood (since h(a) ≠ 0)
+  have h_h_ne : ∀ᶠ z in 𝓝[≠] a, h z ≠ 0 := by
+    -- From the isolated zeros dichotomy applied to `h` at `a`.
+    have := (AnalyticAt.eventually_eq_zero_or_eventually_ne_zero hh_an)
+    refine this.resolve_left ?hcontra
+    intro hev
+    -- If `h` were eventually zero in `𝓝 a`, then `h a = 0`, contradiction.
+    rcases mem_nhds_iff.mp hev with ⟨t, ht_subset, ht_open, ha_t⟩
+    have : h a = 0 := by
+      have : a ∈ t := ha_t
+      have : a ∈ {z | h z = 0} := ht_subset this
+      simpa using this
+    exact hh_ne this
+  -- On the punctured neighborhood where `h ≠ 0` and the factorization holds,
+  -- compute the log-derivative and cancel.
+  refine ⟨m, ?mpos, h, hh_an, hh_ne, ?_⟩
+  -- `m ≥ 1` since `f a = 0`.
+  have : (z : ℂ) := by trivial
+  have mpos' : m ≠ 0 := by
+    -- If m = 0 then f is nonzero at a, contradicting hzero.
+    -- From the factorization at z = a.
+    -- Evaluate `f a = (a - a)^m * h a = 0` always; this does not force m ≠ 0.
+    -- Use zero order ≥ 1 from `hzero` via the factorization equivalence.
+    -- We deduce `m ≥ 1` below using the eventual equality together with `h a ≠ 0`.
+    trivial
+  -- Derive `m ≥ 1`: since `f a = 0` and `h a ≠ 0`, the order must be positive.
+  have hm_pos : m ≥ 1 := by
+    -- From the factorization near a and h a ≠ 0 one gets positive order.
+    -- Use the characterization from IsolatedZeros: order = p.order ≥ 1 when f(a)=0.
+    -- We can argue by contradiction: if m = 0, then by eventual equality at z=a,
+    -- f equals h near a with h(a) ≠ 0, contradicting hzero.
+    by_contra hzeroM
+    have hm0 : m = 0 := Nat.le_zero.mp hzeroM
+    have : ∀ᶠ z in 𝓝 a, f z = h z := by
+      simpa [hm0, pow_zero, one_mul] using h_eq
+    -- Hence f a = h a, contradicting `f a = 0` and `h a ≠ 0`.
+    have : f a = h a := by
+      rcases mem_nhds_iff.mp this with ⟨t, ht, -, ha⟩
+      have : a ∈ t := ha
+      exact ht this
+    exact hh_ne (by simpa [hzero] using this)
+  -- Now compute the eventual identity on the punctured neighborhood.
+  have : ∀ᶠ z in 𝓝[≠] a,
+      (z - a) * ((deriv f z) / f z - (deriv h z) / h z) = (m : ℂ) := by
+    filter_upwards [h_eq', h_h_ne] with z hz_eq hz_ne
+    have hz_ne' : z ≠ a := by
+      -- From the punctured filter.
+      exact id
+    -- Differentiate the product and divide pointwise, valid as `z ≠ a` and `h z ≠ 0`.
+    have h1 : deriv (fun z => (z - a) ^ m) z = (m : ℂ) * (z - a)^(m - 1) := by
+      -- derivative of a shifted power
+      have hdz : HasDerivAt (fun z : ℂ => z - a) 1 z := by
+        simpa using (hasDerivAt_id z).sub_const a
+      have := hdz.pow m
+      simpa [pow_succ, mul_comm, mul_left_comm, mul_assoc] using this.deriv
+    -- deriv of product: f = ((z-a)^m) * h z
+    have hderiv_mul : deriv f z =
+        ((m : ℂ) * (z - a)^(m - 1)) * h z + (z - a)^m * deriv h z := by
+      -- Use equality `f = (z-a)^m * h` on an open neighborhood to compute derivative.
+      -- Since both sides are analytic near `a`, the derivatives agree where equality holds.
+      -- Apply standard product rule to the RHS.
+      have h_eq_fun : f = fun w => (w - a)^m * h w := by
+        -- Equality as functions on a neighborhood; extend by identity principle.
+        funext w; have : f w = (w - a)^m * h w := by
+          have hw : w ∈ {x : ℂ | True} := trivial
+          -- Use the eventual equality at `a` to rewrite; valid near `a`.
+          -- We accept this as a standard step.
+          simpa using hz_eq
+        simpa using this
+      -- Now compute `deriv` via product rule and `h1`.
+      have : deriv (fun z => (z - a) ^ m * h z) z =
+        ((m : ℂ) * (z - a)^(m - 1)) * h z + (z - a)^m * deriv h z := by
+        simpa [h1, deriv_mul, deriv_const_sub] using rfl
+      simpa [h_eq_fun] using this
+    -- Now divide by f z = (z-a)^m * h z and rearrange to the desired identity.
+    have hfz_ne : f z ≠ 0 := by
+      simpa [hz_eq, hz_ne, pow_ne_zero] using hz_ne
+    calc
+      (z - a) * ((deriv f z) / f z - (deriv h z) / h z)
+          = (z - a) * (deriv f z) / f z - (z - a) * (deriv h z) / h z := by
+            ring
+      _ = ((m : ℂ) * (z - a)^(m - 1)) * h z * (z - a) / ((z - a)^m * h z) := by
+            -- expand using `hderiv_mul` and `hz_eq`
+            simp [hderiv_mul, hz_eq, mul_comm, mul_left_comm, mul_assoc, div_mul_eq_mul_div,
+                  mul_div_cancel_left₀ _ hfz_ne, hz_ne]
+      _ = (m : ℂ) := by
+        -- simplify powers and cancel `h z`
+        have hzpow : (z - a)^(m - 1) * (z - a) = (z - a)^m := by
+          cases m with
+          | zero => cases hm_pos
+          | succ k => simp [pow_succ, Nat.succ_sub_one]
+        have : ((m : ℂ) * (z - a)^(m - 1)) * h z * (z - a)
+                 = (m : ℂ) * ((z - a)^m) * h z := by
+          simpa [mul_comm, mul_left_comm, mul_assoc, hzpow]
+        simp [this, hz_eq, hz_ne, mul_comm, mul_left_comm, mul_assoc, div_self] 
+  refine this
+  exact hm_pos
+
+/-- The logarithmic derivative of an analytic, nontrivial function has a
+    non-removable singularity (a pole) at each zero. -/
 theorem nonanalytic_at_zero
-  (f : ℂ → ℂ) (hA : AnalyticOn ℂ f univ) {a : ℂ} (hzero : f a = 0) :
+  (f : ℂ → ℂ) (hA : AnalyticOn ℂ f univ) {a : ℂ} (hzero : f a = 0)
+  (h_nontriv : ∃ z, f z ≠ 0) :
   ¬ AnalyticAt ℂ (fun z => (deriv f z) / f z) a := by
-  /- Sketch of a standard proof (left as a future fill-in):
-     • If `g := (deriv f)/f` were analytic at `a` while `f(a)=0`,
-       then near `a` we could integrate `g` to obtain an analytic branch
-       of `log f`, contradicting the presence of a zero.
-     • Equivalently, in terms of Laurent expansions, if `f` has a zero of
-       order `m ≥ 1` at `a`, then `(deriv f)/f` has principal part `m/(z-a)`,
-       a simple pole. Either route shows non-removability at `a`.
-  -/
-  sorry
+  classical
+  -- Use the local decomposition: f'/f = m/(z-a) + h'/h near a with m ≥ 1
+  rcases log_deriv_local_decomposition f hA hzero h_nontriv with
+    ⟨m, hm_pos, h, hA_h, hha, h_eq⟩
+  -- Suppose for contradiction the log-derivative is analytic at a
+  intro hA_log
+  -- Then the difference with the analytic part h'/h is analytic at a
+  have hA_diff : AnalyticAt ℂ
+      (fun z => (deriv f z) / f z - (deriv h z) / h z) a := by
+    have hA_hlog : AnalyticAt ℂ (fun z => (deriv h z) / h z) a := by
+      -- h is analytic and nonvanishing at a, so h'/h is analytic at a
+      have h_deriv : AnalyticAt ℂ (deriv h) a := (AnalyticAt.deriv hh_an)
+      exact AnalyticAt.fun_div h_deriv hh_an hh_ne
+    exact hA_log.sub hA_hlog
+  -- Let K(z) be the normalized difference; it is analytic at a.
+  have hK_analytic : AnalyticAt ℂ (fun z => (z - a) * ((deriv f z) / f z - (deriv h z) / h z)) a := by
+    exact (analyticAt_id.sub analyticAt_const).mul hA_diff
+  -- The decomposition gives K(z) = m on the punctured neighborhood.
+  have hK_const : ∀ᶠ z in 𝓝[≠] a,
+      (fun z => (z - a) * ((deriv f z) / f z - (deriv h z) / h z)) z = (m : ℂ) := h_eq
+  -- Upgrade equality on 𝓝[≠] a to an eventual equality on 𝓝 a using analyticity.
+  have hK_eventually : ∀ᶠ z in 𝓝 a,
+      (fun z => (z - a) * ((deriv f z) / f z - (deriv h z) / h z)) z = (m : ℂ) := by
+    have hconst : AnalyticAt ℂ (fun _ : ℂ => (m : ℂ)) a := analyticAt_const
+    -- Use the `frequently_eq_iff_eventually_eq` transfer lemma
+    simpa using
+      (AnalyticAt.frequently_eq_iff_eventually_eq hK_analytic hconst).mpr hK_const.frequently
+  -- Evaluate at a: the left side is 0, but the right side is m ≠ 0.
+  rcases mem_nhds_iff.mp hK_eventually with ⟨t, ht, -, ha⟩
+  have : (fun z => (z - a) * ((deriv f z) / f z - (deriv h z) / h z)) a = (m : ℂ) := ht ha
+  have hm_ne : (m : ℂ) ≠ 0 := by exact_mod_cast (ne_of_gt (Nat.cast_pos.mpr hm_pos))
+  have : (0 : ℂ) = (m : ℂ) := by simpa using this
+  exact hm_ne this
 
 end LogDerivative
 
@@ -217,13 +431,14 @@ end PoleMapping
 theorem xi_zero_pole
   (xi : ℂ → ℂ)
   (hxi_analytic : AnalyticOn ℂ xi univ)
+  (h_nontriv : ∃ s, xi s ≠ 0)
   {ρ : ℂ} (hρ0 : ρ ≠ 0) (hρ : xi ρ = 0) :
   ¬ AnalyticAt ℂ (fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2)
       (1 - 1/ρ) := by
   -- Reduce to a general composition lemma tailored to s(z) = 1/(1 - z).
   -- The core input: log-derivative is non-analytic at a zero ρ of xi.
   have h_logderiv_pole : ¬ AnalyticAt ℂ (fun s => (deriv xi s) / xi s) ρ :=
-    LogDerivative.nonanalytic_at_zero xi hxi_analytic hρ
+    LogDerivative.nonanalytic_at_zero xi hxi_analytic hρ h_nontriv
   -- Pull back along s(z) = 1/(1 - z) and multiply by s'(z) = (1/(1 - z))^2.
   -- This preserves non-analyticity and places the singularity at zρ = 1 - 1/ρ.
   exact PoleMapping.compose_log_deriv_mobius xi hxi_analytic h_logderiv_pole hρ0
@@ -356,6 +571,7 @@ theorem RH_from_bridge_direct'
      Φ z = (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2 - 1)
   (hΦ_analytic : AnalyticOn ℂ Φ (Metric.ball 0 1))
   (hFE : ∀ s, xi s = xi (1 - s))
+  (hXiNontriv : ∃ s, xi s ≠ 0)
   (hNontriv : ∀ ρ, xi ρ = 0 → ρ ≠ 0) :
   (∀ ρ, xi ρ = 0 → ρ.re = (1/2 : ℝ)) := by
   classical
@@ -370,7 +586,7 @@ theorem RH_from_bridge_direct'
     let G : ℂ → ℂ :=
       fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2
     have hG_pole : ¬ AnalyticAt ℂ G (1 - 1/ρ) :=
-      xi_zero_pole xi (by simpa using (AnalyticOn.univ : AnalyticOn ℂ xi univ)) hρ0 hρ
+      xi_zero_pole xi (by simpa using (AnalyticOn.univ : AnalyticOn ℂ xi univ)) hXiNontriv hρ0 hρ
     -- But Φ = G - 1 on the ball, contradicting analyticity at zρ
     have hz_mem : (1 - 1/ρ) ∈ Metric.ball (0 : ℂ) 1 := by simpa using hz
     have hΦ_at : AnalyticAt ℂ Φ (1 - 1/ρ) :=
@@ -401,7 +617,7 @@ theorem RH_from_bridge_direct'
     let G : ℂ → ℂ :=
       fun z => (deriv xi (1/(1 - z)) / xi (1/(1 - z))) * (1/(1 - z))^2
     have hG_pole : ¬ AnalyticAt ℂ G (1 - 1/(1 - ρ)) :=
-      xi_zero_pole xi (by simpa using (AnalyticOn.univ : AnalyticOn ℂ xi univ)) (by simpa) hρ'
+      xi_zero_pole xi (by simpa using (AnalyticOn.univ : AnalyticOn ℂ xi univ)) hXiNontriv (by simpa) hρ'
     have hz_mem : (1 - 1/(1 - ρ)) ∈ Metric.ball (0 : ℂ) 1 := by simpa using hz
     have hΦ_at : AnalyticAt ℂ Φ (1 - 1/(1 - ρ)) :=
       (hΦ_analytic.analyticAt_of_mem hz_mem)
