@@ -23,6 +23,29 @@ noncomputable section
 open scoped Complex
 open Complex
 
+/-- Reusable facts about logarithmic derivatives. -/
+namespace LogDerivative
+
+/-- The logarithmic derivative of an analytic function has a (non-removable)
+    singularity at each zero. Concretely: if `f(a) = 0` and `f` is analytic,
+    then `z ↦ deriv f z / f z` is not analytic at `a` (indeed it has a pole
+    whose residue equals the multiplicity of the zero). This minimal version
+    asserts the non-analyticity, which is the only property needed for Route B. -/
+theorem nonanalytic_at_zero
+  (f : ℂ → ℂ) (hA : AnalyticOn ℂ f univ) {a : ℂ} (hzero : f a = 0) :
+  ¬ AnalyticAt ℂ (fun z => (deriv f z) / f z) a := by
+  /- Sketch of a standard proof (left as a future fill-in):
+     • If `g := (deriv f)/f` were analytic at `a` while `f(a)=0`,
+       then near `a` we could integrate `g` to obtain an analytic branch
+       of `log f`, contradicting the presence of a zero.
+     • Equivalently, in terms of Laurent expansions, if `f` has a zero of
+       order `m ≥ 1` at `a`, then `(deriv f)/f` has principal part `m/(z-a)`,
+       a simple pole. Either route shows non-removability at `a`.
+  -/
+  sorry
+
+end LogDerivative
+
 /-!
 Neumann resolvent for bounded operators:
 R(z) = ∑ z^n • U^n,  ‖U‖ ≤ 1  ⇒  (I - z•U) ∘ R(z) = R(z) ∘ (I - z•U) = I for ‖z‖<1,
