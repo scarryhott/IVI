@@ -51,6 +51,9 @@ lean_lib "IVI_Internal_RH" where
 lean_lib "IVI_RouteB_Internal_Instantiate" where
   -- Demo instantiation of the internal Route B wrapper
 
+lean_lib "IVI_RouteB_Internal_Specialize" where
+  -- Specialization that ties lemmas to the internal wrapper for canonical xi/G
+
 @[default_target]
 lean_exe "ivi" where
   root := `Main

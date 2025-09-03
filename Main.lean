@@ -2,6 +2,7 @@ import IVI
 import IVI_Bridge_Minimal
 import IVI_Internal_RH
 import IVI_RouteB_Internal_Instantiate
+import IVI_RouteB_Internal_Specialize
 
 /-! ## Main Entry Point with Hygiene Checks -/
 variable {I : Type*} [Fintype I]
@@ -45,6 +46,8 @@ variable {I : Type*} [Fintype I]
 #check IVI_Internal.internal_RH_proof
 -- Demo instantiation (trivial xi): shows the API is ready
 #check IVI_RouteB_Internal_Instantiate.demo_internal_RH_trivial
+-- Skeleton to specialize Route B with your canonical xi and bridge
+#check IVI_RouteB_Internal_Specialize.internal_RH_via_bridge
 
 -- Adelic geometry beyond groups
 -- #check IVI_paradox_resolution
